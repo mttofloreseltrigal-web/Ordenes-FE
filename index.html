@@ -167,7 +167,7 @@
                     </div>
                 </div>
 
-                <!-- PANEL: MONITOR DE TALLER (OPTIMIZADO TV & PANTALLAS GRANDES) -->
+                <!-- PANEL: MONITOR DE TALLER -->
                 <div id="rol-taller" class="subseccion hidden space-y-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-lg border-b-4 border-[#d4af37]">
                         <div>
@@ -182,7 +182,6 @@
                         </div>
                     </div>
 
-                    <!-- Cuadrícula de órdenes optimizada para máxima legibilidad -->
                     <div id="lista-taller-tv" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6"></div>
                 </div>
 
@@ -236,7 +235,7 @@
                             </div>
                         </div>
 
-                        <!-- ZONA DE PELIGRO / REINICIO -->
+                        <!-- ZONA DE PELIGRO -->
                         <div class="p-4 bg-red-50 rounded-2xl border border-red-200 flex flex-col sm:flex-row justify-between items-center gap-4">
                             <div>
                                 <h4 class="text-xs font-bold text-red-800 uppercase">🔄 Reiniciar Órdenes del Sistema</h4>
@@ -267,7 +266,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE ASIGNACIÓN Y ENVÍO A TALLER (JEFE DE MANTENIMIENTO) -->
+    <!-- MODAL DE ASIGNACIÓN -->
     <div id="modalAsignarJefe" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4">
             <div>
@@ -310,7 +309,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE CIERRE PARCIAL (OPERARIO) -->
+    <!-- MODAL DE CIERRE PARCIAL -->
     <div id="modalCierreParcial" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4">
             <div>
@@ -329,7 +328,6 @@
                     <input type="text" id="parcialTiempo" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="Ej: 2 horas / 45 minutos">
                 </div>
 
-                <!-- REPUESTOS SOLICITADOS -->
                 <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
                     <div class="flex justify-between items-center">
                         <label class="block text-[11px] font-bold text-slate-900 uppercase">Repuestos Utilizados</label>
@@ -351,7 +349,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE REVISIÓN Y CIERRE DEFINITIVO (JEFE DE MANTENIMIENTO) -->
+    <!-- MODAL DE REVISIÓN Y CIERRE DEFINITIVO -->
     <div id="modalRevisionJefe" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4">
             <div>
@@ -368,12 +366,9 @@
                     <p><strong>Tiempo Invertido:</strong> <span id="rev_tiempo"></span></p>
                 </div>
 
-                <!-- LISTADO PARA ASIGNAR COSTOS A LOS REPUESTOS -->
                 <div class="space-y-2">
                     <label class="block text-xs font-bold text-slate-900 uppercase">Costos Unitarios de Repuestos</label>
-                    <div id="contenedor-costos-repuestos" class="space-y-2">
-                        <!-- Se llena dinámicamente -->
-                    </div>
+                    <div id="contenedor-costos-repuestos" class="space-y-2"></div>
                 </div>
 
                 <div class="flex justify-between items-center bg-slate-900 text-[#fef08a] p-3 rounded-xl font-bold text-xs">
@@ -396,28 +391,71 @@
         </div>
     </div>
 
+    <!-- CONEXIÓN FIREBASE SINCRONIZADA -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { 
+            getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAernP0Ggb3yUn7aUJwdhN6AUuqLXg0R6k",
+            authDomain: "ordenes-fe.firebaseapp.com",
+            projectId: "ordenes-fe",
+            storageBucket: "ordenes-fe.firebasestorage.app",
+            messagingSenderId: "98577406074",
+            appId: "1:98577406074:web:1578c910f529252052c3c3",
+            measurementId: "G-71B24C0M0K"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.db = db;
+        window.fb = { collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc };
+
+        // Escuchadores de datos en tiempo real
+        window.solicitudesGlobales = [];
+        window.configGlobal = {
+            credenciales: { jefe: "jefe123", supervisor: "sup123", taller: "taller123" },
+            operarios: ["Martin Sepúlveda", "Arnoldo Sepúlveda", "Rubén Ramírez", "Álvaro Giraldo", "Jean Pierre Herrera", "Javier Guatín", "Guillermo Ospina"],
+            maquinas: ["Faja Transportadora B", "Caldera Principal", "Banco de Empaque 1", "Compresor de Aire A", "Clasificadora de Tallos"]
+        };
+
+        // Sincronización en tiempo real de Órdenes
+        onSnapshot(collection(db, "ordenes"), (snapshot) => {
+            window.solicitudesGlobales = [];
+            snapshot.forEach(docSnap => {
+                window.solicitudesGlobales.push(docSnap.data());
+            });
+
+            // Refrescar vistas según la pantalla activa
+            if (window.usuarioAutenticado === 'jefe') cargarBandejaJefe();
+            if (window.usuarioAutenticado === 'taller') cargarMonitorTaller();
+            const vistaHist = document.getElementById('vista-historial');
+            if (vistaHist && !vistaHist.classList.contains('hidden')) cargarHistorial();
+        });
+
+        // Sincronización en tiempo real de Ajustes (Configuración)
+        onSnapshot(collection(db, "configuracion"), (snapshot) => {
+            snapshot.forEach(docSnap => {
+                if (docSnap.id === "credenciales") window.configGlobal.credenciales = docSnap.data();
+                if (docSnap.id === "listas") {
+                    const data = docSnap.data();
+                    if (data.operarios) window.configGlobal.operarios = data.operarios;
+                    if (data.maquinas) window.configGlobal.maquinas = data.maquinas;
+                }
+            });
+
+            if (window.usuarioAutenticado === 'supervisor') cargarSelectoresSupervisor();
+            const vistaCfg = document.getElementById('vista-config');
+            if (vistaCfg && !vistaCfg.classList.contains('hidden')) cargarConfiguraciones();
+        });
+    </script>
+
     <script>
         let fotoTemporal = "";
-        let usuarioAutenticado = null;
-
-        if (!localStorage.getItem('credenciales')) {
-            localStorage.setItem('credenciales', JSON.stringify({ jefe: "jefe123", supervisor: "sup123", taller: "taller123" }));
-        }
-        if (!localStorage.getItem('operarios')) {
-            localStorage.setItem('operarios', JSON.stringify([
-                "Martin Sepúlveda", "Arnoldo Sepúlveda", "Rubén Ramírez", 
-                "Álvaro Giraldo", "Jean Pierre Herrera", "Javier Guatín", "Guillermo Ospina"
-            ]));
-        }
-        if (!localStorage.getItem('maquinas')) {
-            localStorage.setItem('maquinas', JSON.stringify([
-                "Faja Transportadora B", "Caldera Principal", "Banco de Empaque 1", 
-                "Compresor de Aire A", "Clasificadora de Tallos"
-            ]));
-        }
-        if (!localStorage.getItem('solicitudes')) {
-            localStorage.setItem('solicitudes', JSON.stringify([]));
-        }
+        window.usuarioAutenticado = null;
 
         function mostrarToast(mensaje, tipo = 'success') {
             const container = document.getElementById('toast-container');
@@ -429,10 +467,7 @@
             
             container.appendChild(toast);
             
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
-
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
             setTimeout(() => {
                 toast.classList.add('opacity-0');
                 setTimeout(() => toast.remove(), 300);
@@ -443,10 +478,10 @@
             event.preventDefault();
             const rol = document.getElementById('loginRol').value;
             const claveInput = document.getElementById('loginClave').value;
-            const creds = JSON.parse(localStorage.getItem('credenciales'));
+            const creds = window.configGlobal.credenciales;
 
             if (claveInput === creds[rol]) {
-                usuarioAutenticado = rol;
+                window.usuarioAutenticado = rol;
                 document.getElementById('pantalla-login').classList.add('hidden');
                 document.getElementById('contenedor-roles').classList.remove('hidden');
                 document.getElementById('sidebar').classList.remove('hidden');
@@ -469,7 +504,7 @@
         }
 
         function logout() {
-            usuarioAutenticado = null;
+            window.usuarioAutenticado = null;
             document.getElementById('pantalla-login').classList.remove('hidden');
             document.getElementById('contenedor-roles').classList.add('hidden');
             document.getElementById('sidebar').classList.add('hidden');
@@ -483,13 +518,13 @@
             subsecciones.forEach(el => el.classList.add('hidden'));
 
             if (vista === 'panel') {
-                if (usuarioAutenticado === 'jefe') {
+                if (window.usuarioAutenticado === 'jefe') {
                     document.getElementById('rol-jefe').classList.remove('hidden');
                     cargarBandejaJefe();
-                } else if (usuarioAutenticado === 'supervisor') {
+                } else if (window.usuarioAutenticado === 'supervisor') {
                     document.getElementById('rol-supervisor').classList.remove('hidden');
                     cargarSelectoresSupervisor();
-                } else if (usuarioAutenticado === 'taller') {
+                } else if (window.usuarioAutenticado === 'taller') {
                     document.getElementById('rol-taller').classList.remove('hidden');
                     cargarMonitorTaller();
                 }
@@ -534,7 +569,7 @@
             reader.readAsDataURL(file);
         }
 
-        function enviarSolicitudSupervisor(event) {
+        async function enviarSolicitudSupervisor(event) {
             event.preventDefault();
             const solicitante = document.getElementById('sup_solicitante').value;
             const maquina = document.getElementById('sup_maquina').value;
@@ -542,9 +577,9 @@
             const ubicacion = document.getElementById('sup_ubicacion').value;
             const resumen = document.getElementById('sup_resumen').value;
 
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const newId = Date.now();
             const nuevaOrden = {
-                id: Date.now(),
+                id: newId,
                 codigo: 'OT-' + Math.floor(1000 + Math.random() * 9000),
                 fecha: new Date().toLocaleString(),
                 solicitante,
@@ -558,16 +593,19 @@
                 programa: 'Correctivo'
             };
 
-            solicitudes.push(nuevaOrden);
-            localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
-
-            mostrarToast('Orden enviada correctamente a Mantenimiento');
-            event.target.reset();
-            fotoTemporal = "";
+            try {
+                await window.fb.setDoc(window.fb.doc(window.db, "ordenes", String(newId)), nuevaOrden);
+                mostrarToast('Orden enviada correctamente a Mantenimiento');
+                event.target.reset();
+                fotoTemporal = "";
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al enviar la orden', 'error');
+            }
         }
 
         function cargarSelectoresSupervisor() {
-            const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+            const maquinas = window.configGlobal.maquinas;
             const select = document.getElementById('sup_maquina');
             select.innerHTML = '<option value="">Seleccione máquina...</option>';
             maquinas.forEach(m => {
@@ -576,7 +614,7 @@
         }
 
         function cargarBandejaJefe() {
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const solicitudes = window.solicitudesGlobales;
             const contenedor = document.getElementById('lista-jefe-gestion');
             contenedor.innerHTML = '';
 
@@ -634,7 +672,7 @@
 
         function abrirModalAsignarJefe(id) {
             document.getElementById('asignarId').value = id;
-            const operarios = JSON.parse(localStorage.getItem('operarios'));
+            const operarios = window.configGlobal.operarios;
             const select = document.getElementById('jefe_asignar_responsable');
             select.innerHTML = '<option value="">Seleccione operario...</option>';
             operarios.forEach(o => {
@@ -647,29 +685,30 @@
             document.getElementById('modalAsignarJefe').classList.add('hidden');
         }
 
-        function procesarAsignacionJefe(event) {
+        async function procesarAsignacionJefe(event) {
             event.preventDefault();
             const id = parseInt(document.getElementById('asignarId').value);
             const prioridad = document.getElementById('jefe_asignar_prioridad').value;
             const programa = document.getElementById('jefe_asignar_programa').value;
             const tecnico = document.getElementById('jefe_asignar_responsable').value;
 
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
-            const idx = solicitudes.findIndex(s => s.id === id);
-            if (idx !== -1) {
-                solicitudes[idx].prioridad = prioridad;
-                solicitudes[idx].programa = programa;
-                solicitudes[idx].tecnico = tecnico;
-                solicitudes[idx].estado = 'En Taller';
-                localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+            try {
+                await window.fb.updateDoc(window.fb.doc(window.db, "ordenes", String(id)), {
+                    prioridad,
+                    programa,
+                    tecnico,
+                    estado: 'En Taller'
+                });
                 mostrarToast('Orden asignada y enviada a Monitor de Taller');
                 cerrarModalAsignarJefe();
-                cargarBandejaJefe();
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al asignar orden', 'error');
             }
         }
 
         function cargarMonitorTaller() {
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const solicitudes = window.solicitudesGlobales;
             const filtro = document.getElementById('filtroOperario').value.toLowerCase();
             const contenedor = document.getElementById('lista-taller-tv');
             contenedor.innerHTML = '';
@@ -737,7 +776,7 @@
             `;
         }
 
-        function procesarCierreParcial(event) {
+        async function procesarCierreParcial(event) {
             event.preventDefault();
             const id = parseInt(document.getElementById('parcialId').value);
             const comentarios = document.getElementById('parcialComentarios').value;
@@ -753,25 +792,25 @@
                 }
             });
 
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
-            const idx = solicitudes.findIndex(s => s.id === id);
-            if (idx !== -1) {
-                solicitudes[idx].comentariosTaller = comentarios;
-                solicitudes[idx].tiempoEmpleado = tiempo;
-                solicitudes[idx].repuestos = repuestos;
-                solicitudes[idx].fotoDespues = fotoTemporal;
-                solicitudes[idx].estado = 'Por Aprobar';
-                localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+            try {
+                await window.fb.updateDoc(window.fb.doc(window.db, "ordenes", String(id)), {
+                    comentariosTaller: comentarios,
+                    tiempoEmpleado: tiempo,
+                    repuestos: repuestos,
+                    fotoDespues: fotoTemporal,
+                    estado: 'Por Aprobar'
+                });
                 mostrarToast('Reporte enviado a revisión del Jefe');
                 cerrarModalParcial();
-                cargarMonitorTaller();
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al enviar reporte parcial', 'error');
             }
         }
 
         function abrirModalRevisionJefe(id) {
             document.getElementById('revisionId').value = id;
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
-            const orden = solicitudes.find(s => s.id === id);
+            const orden = window.solicitudesGlobales.find(s => s.id === id);
 
             if (!orden) return;
 
@@ -801,8 +840,7 @@
 
         function calcularTotalRevision() {
             const id = parseInt(document.getElementById('revisionId').value);
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
-            const orden = solicitudes.find(s => s.id === id);
+            const orden = window.solicitudesGlobales.find(s => s.id === id);
 
             let total = 0;
             const inputs = document.querySelectorAll('.costo-rep-input');
@@ -821,37 +859,43 @@
             document.getElementById('modalRevisionJefe').classList.add('hidden');
         }
 
-        function procesarCierreDefinitivoJefe(event) {
+        async function procesarCierreDefinitivoJefe(event) {
             event.preventDefault();
             const id = parseInt(document.getElementById('revisionId').value);
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
-            const idx = solicitudes.findIndex(s => s.id === id);
+            const orden = window.solicitudesGlobales.find(s => s.id === id);
 
-            if (idx !== -1) {
+            if (orden) {
                 const inputs = document.querySelectorAll('.costo-rep-input');
                 let costoTotal = 0;
+                const repuestosActualizados = [...(orden.repuestos || [])];
+
                 inputs.forEach(input => {
                     const rIdx = parseInt(input.dataset.index);
                     const val = parseFloat(input.value) || 0;
-                    if (solicitudes[idx].repuestos[rIdx]) {
-                        solicitudes[idx].repuestos[rIdx].costoUnitario = val;
-                        costoTotal += val * solicitudes[idx].repuestos[rIdx].cantidad;
+                    if (repuestosActualizados[rIdx]) {
+                        repuestosActualizados[rIdx].costoUnitario = val;
+                        costoTotal += val * repuestosActualizados[rIdx].cantidad;
                     }
                 });
 
-                solicitudes[idx].costoTotal = costoTotal;
-                solicitudes[idx].estado = 'Finalizada';
-                solicitudes[idx].fechaCierre = new Date().toLocaleString();
-
-                localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
-                mostrarToast('Orden cerrada definitivamente y enviada a Historial');
-                cerrarModalRevisionJefe();
-                cargarBandejaJefe();
+                try {
+                    await window.fb.updateDoc(window.fb.doc(window.db, "ordenes", String(id)), {
+                        repuestos: repuestosActualizados,
+                        costoTotal: costoTotal,
+                        estado: 'Finalizada',
+                        fechaCierre: new Date().toLocaleString()
+                    });
+                    mostrarToast('Orden cerrada definitivamente y enviada a Historial');
+                    cerrarModalRevisionJefe();
+                } catch (e) {
+                    console.error(e);
+                    mostrarToast('Error al cerrar orden', 'error');
+                }
             }
         }
 
         function cargarHistorial() {
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const solicitudes = window.solicitudesGlobales;
             const filtro = document.getElementById('filtroHistorial').value.toLowerCase();
             const cont = document.getElementById('contenedor-tarjetas-historial');
             const vacia = document.getElementById('tabla-historial-vacia');
@@ -902,7 +946,7 @@
         }
 
         function exportarACSV() {
-            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const solicitudes = window.solicitudesGlobales;
             const finalizadas = solicitudes.filter(s => s.estado === 'Finalizada');
 
             if (finalizadas.length === 0) {
@@ -926,27 +970,32 @@
         }
 
         function cargarConfiguraciones() {
-            const creds = JSON.parse(localStorage.getItem('credenciales'));
-            document.getElementById('conf_pass_jefe').value = creds.jefe;
-            document.getElementById('conf_pass_sup').value = creds.supervisor;
-            document.getElementById('conf_pass_taller').value = creds.taller;
+            const creds = window.configGlobal.credenciales;
+            document.getElementById('conf_pass_jefe').value = creds.jefe || "";
+            document.getElementById('conf_pass_sup').value = creds.supervisor || "";
+            document.getElementById('conf_pass_taller').value = creds.taller || "";
 
             actualizarListaMaquinasUI();
             actualizarListaOperariosUI();
         }
 
-        function guardarCredenciales(event) {
+        async function guardarCredenciales(event) {
             event.preventDefault();
             const jefe = document.getElementById('conf_pass_jefe').value;
             const supervisor = document.getElementById('conf_pass_sup').value;
             const taller = document.getElementById('conf_pass_taller').value;
 
-            localStorage.setItem('credenciales', JSON.stringify({ jefe, supervisor, taller }));
-            mostrarToast('Credenciales actualizadas exitosamente');
+            try {
+                await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "credenciales"), { jefe, supervisor, taller });
+                mostrarToast('Credenciales actualizadas exitosamente');
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al actualizar credenciales', 'error');
+            }
         }
 
         function actualizarListaMaquinasUI() {
-            const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+            const maquinas = window.configGlobal.maquinas;
             const cont = document.getElementById('lista-maquinas-config');
             cont.innerHTML = '';
             maquinas.forEach((m, idx) => {
@@ -959,29 +1008,40 @@
             });
         }
 
-        function agregarMaquinaLista() {
+        async function agregarMaquinaLista() {
             const input = document.getElementById('nuevaMaquinaInput');
             const val = input.value.trim();
             if (val) {
-                const maquinas = JSON.parse(localStorage.getItem('maquinas'));
-                maquinas.push(val);
-                localStorage.setItem('maquinas', JSON.stringify(maquinas));
-                input.value = '';
-                actualizarListaMaquinasUI();
-                mostrarToast('Máquina agregada');
+                const maquinas = [...window.configGlobal.maquinas, val];
+                try {
+                    await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "listas"), {
+                        maquinas,
+                        operarios: window.configGlobal.operarios
+                    });
+                    input.value = '';
+                    mostrarToast('Máquina agregada');
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
 
-        function eliminarMaquina(idx) {
-            const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+        async function eliminarMaquina(idx) {
+            const maquinas = [...window.configGlobal.maquinas];
             maquinas.splice(idx, 1);
-            localStorage.setItem('maquinas', JSON.stringify(maquinas));
-            actualizarListaMaquinasUI();
-            mostrarToast('Máquina eliminada');
+            try {
+                await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "listas"), {
+                    maquinas,
+                    operarios: window.configGlobal.operarios
+                });
+                mostrarToast('Máquina eliminada');
+            } catch (e) {
+                console.error(e);
+            }
         }
 
         function actualizarListaOperariosUI() {
-            const operarios = JSON.parse(localStorage.getItem('operarios'));
+            const operarios = window.configGlobal.operarios;
             const cont = document.getElementById('lista-operarios-config');
             cont.innerHTML = '';
             operarios.forEach((o, idx) => {
@@ -994,32 +1054,49 @@
             });
         }
 
-        function agregarOperarioLista() {
+        async function agregarOperarioLista() {
             const input = document.getElementById('nuevoOperarioInput');
             const val = input.value.trim();
             if (val) {
-                const operarios = JSON.parse(localStorage.getItem('operarios'));
-                operarios.push(val);
-                localStorage.setItem('operarios', JSON.stringify(operarios));
-                input.value = '';
-                actualizarListaOperariosUI();
-                mostrarToast('Operario agregado');
+                const operarios = [...window.configGlobal.operarios, val];
+                try {
+                    await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "listas"), {
+                        operarios,
+                        maquinas: window.configGlobal.maquinas
+                    });
+                    input.value = '';
+                    mostrarToast('Operario agregado');
+                } catch (e) {
+                    console.error(e);
+                }
             }
         }
 
-        function eliminarOperario(idx) {
-            const operarios = JSON.parse(localStorage.getItem('operarios'));
+        async function eliminarOperario(idx) {
+            const operarios = [...window.configGlobal.operarios];
             operarios.splice(idx, 1);
-            localStorage.setItem('operarios', JSON.stringify(operarios));
-            actualizarListaOperariosUI();
-            mostrarToast('Operario eliminado');
+            try {
+                await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "listas"), {
+                    operarios,
+                    maquinas: window.configGlobal.maquinas
+                });
+                mostrarToast('Operario eliminado');
+            } catch (e) {
+                console.error(e);
+            }
         }
 
-        function reiniciarTodasLasOrdenes() {
+        async function reiniciarTodasLasOrdenes() {
             if (confirm('¿Está absolutamente seguro de borrar TODAS las órdenes del sistema? Esta acción no se puede deshacer.')) {
-                localStorage.setItem('solicitudes', JSON.stringify([]));
-                mostrarToast('Todas las órdenes han sido eliminadas');
-                cargarConfiguraciones();
+                try {
+                    const snap = await window.fb.getDocs(window.fb.collection(window.db, "ordenes"));
+                    const promises = snapshot => snapshot.docs.map(docSnap => window.fb.deleteDoc(docSnap.ref));
+                    await Promise.all(promises(snap));
+                    mostrarToast('Todas las órdenes han sido eliminadas');
+                } catch (e) {
+                    console.error(e);
+                    mostrarToast('Error al reiniciar las órdenes', 'error');
+                }
             }
         }
 
