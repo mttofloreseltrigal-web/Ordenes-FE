@@ -3,91 +3,199 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Órdenes - Mantenimiento</title>
+    <title>Sistema de Órdenes de Trabajo - Mantenimiento</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body class="bg-gray-100 font-sans min-h-screen">
+<body class="bg-gray-100 font-sans min-h-screen pb-10">
 
-    <!-- BARRA SUPERIOR -->
-    <nav class="bg-blue-700 text-white p-4 shadow-lg flex justify-between items-center">
-        <h1 class="text-xl font-bold flex items-center gap-2">
-            <i class="fas fa-tools"></i> Mantenimiento - Órdenes FE
-        </h1>
-        <div id="usuario-status" class="text-sm bg-blue-800 px-3 py-1 rounded-full font-semibold">
-            Modo: Mantenimiento
-        </div>
-    </nav>
-
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="max-w-4xl mx-auto m-6 p-6 bg-white rounded-xl shadow-md">
-        
-        <!-- SECCIÓN DE AJUSTES GENERALES -->
-        <div class="border-b pb-4 mb-6">
-            <h2 class="text-lg font-bold text-gray-800 mb-2">⚙️ Ajustes Generales y Configuración</h2>
-            <p class="text-sm text-gray-600 mb-4">Administra las máquinas, operarios y contraseñas del sistema.</p>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- AGREGAR MÁQUINA -->
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="font-semibold text-gray-700 mb-2">Añadir Máquina</h3>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="nuevaMaquinaInput" placeholder="Ej: Torno CNC" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button onclick="agregarMaquinaLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
-                    </div>
-                    <div id="lista-maquinas-config" class="max-h-32 overflow-y-auto border p-2 rounded bg-white">
-                        <span class="text-xs text-gray-400">Cargando máquinas...</span>
-                    </div>
-                </div>
-
-                <!-- AGREGAR OPERARIO -->
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="font-semibold text-gray-700 mb-2">Añadir Operario</h3>
-                    <div class="flex gap-2 mb-3">
-                        <input type="text" id="nuevoOperarioInput" placeholder="Ej: Juan Pérez" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button onclick="agregarOperarioLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
-                    </div>
-                    <div id="lista-operarios-config" class="max-h-32 overflow-y-auto border p-2 rounded bg-white">
-                        <span class="text-xs text-gray-400">Cargando operarios...</span>
-                    </div>
-                </div>
+    <!-- PANTALLA DE LOGIN -->
+    <div id="pantalla-login" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
+            <div class="text-center mb-6">
+                <i class="fas fa-tools text-4xl text-blue-700 mb-2"></i>
+                <h2 class="text-2xl font-bold text-gray-800">Órdenes de Trabajo</h2>
+                <p class="text-xs text-gray-500">Sede Caribe</p>
             </div>
-
-            <!-- CONTRASEÑAS -->
-            <div class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 class="font-semibold text-gray-700 mb-3">Contraseñas de Acceso</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Jefe:</label>
-                        <input type="password" id="conf_pass_jefe" class="w-full p-2 border rounded text-sm" placeholder="Pass Jefe">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Supervisor:</label>
-                        <input type="password" id="conf_pass_sup" class="w-full p-2 border rounded text-sm" placeholder="Pass Supervisor">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-600 mb-1">Taller:</label>
-                        <input type="password" id="conf_pass_taller" class="w-full p-2 border rounded text-sm" placeholder="Pass Taller">
-                    </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar Rol</label>
+                    <select id="login-rol" class="w-full p-2.5 border rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500">
+                        <option value="operario">Operario / Solicitante</option>
+                        <option value="taller">Taller / Mantenimiento</option>
+                        <option value="supervisor">Supervisor</option>
+                        <option value="jefe">Jefe de Mantenimiento</option>
+                    </select>
                 </div>
-                <button onclick="guardarCredenciales()" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold w-full transition">
-                    Actualizar Contraseñas
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Contraseña</label>
+                    <input type="password" id="login-pass" placeholder="Ingresa tu contraseña" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                </div>
+                <button onclick="iniciarSesion()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg text-sm transition shadow">
+                    Ingresar al Sistema
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- BARRA SUPERIOR (NAVBAR) -->
+    <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-40">
+        <div class="flex items-center space-x-3">
+            <i class="fas fa-wrench text-2xl"></i>
+            <h1 class="text-xl font-bold">Órdenes FE</h1>
+        </div>
+        <div class="flex items-center gap-4">
+            <span id="usuario-status" class="bg-blue-900 px-3 py-1 rounded-full text-xs font-semibold border border-blue-700">
+                Rol: Invitado
+            </span>
+            <button onclick="cerrarSesion()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full transition">
+                <i class="fas fa-sign-out-alt"></i> Salir
+            </button>
+        </div>
+    </nav>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="max-w-6xl mx-auto my-6 px-4">
+        
+        <!-- PESTAÑAS DE NAVEGACIÓN -->
+        <div class="flex border-b border-gray-300 mb-6 bg-white rounded-t-lg overflow-hidden shadow-sm">
+            <button onclick="cambiarPestana('ordenes')" id="tab-ordenes" class="flex-1 py-3 px-4 text-center font-bold text-blue-700 border-b-2 border-blue-700 bg-gray-50 flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-list-check"></i> Órdenes Activas
+            </button>
+            <button onclick="cambiarPestana('crear')" id="tab-crear" class="flex-1 py-3 px-4 text-center font-bold text-gray-500 hover:text-blue-700 flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-plus-circle"></i> Nueva Orden
+            </button>
+            <button onclick="cambiarPestana('ajustes')" id="tab-ajustes" class="flex-1 py-3 px-4 text-center font-bold text-gray-500 hover:text-blue-700 flex items-center justify-center gap-2 text-sm">
+                <i class="fas fa-sliders"></i> Ajustes Generales
+            </button>
+        </div>
+
+        <!-- SECCIÓN 1: VISTA DE ÓRDENES -->
+        <div id="sec-ordenes" class="space-y-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4 justify-between items-center">
+                <h2 class="text-lg font-bold text-gray-800">Listado de Órdenes de Trabajo</h2>
+                <div class="flex gap-2 w-full sm:w-auto">
+                    <input type="text" id="filtro-buscar" onkeyup="filtrarOrdenes()" placeholder="Buscar orden..." class="p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto">
+                    <select id="filtro-estado" onchange="filtrarOrdenes()" class="p-2 border rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Todos los estados</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="En Proceso">En Proceso</option>
+                        <option value="Finalizada">Finalizada</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="contenedor-ordenes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white p-6 rounded-lg shadow-sm text-center text-gray-400 col-span-full">
+                    Cargando órdenes de la base de datos...
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: CREAR NUEVA ÓRDEN -->
+        <div id="sec-crear" class="hidden bg-white p-6 rounded-lg shadow-sm max-w-2xl mx-auto">
+            <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Registrar Nueva Orden de Mantenimiento</h2>
+            <form id="form-orden" onsubmit="guardarNuevaOrden(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Máquina / Equipo</label>
+                    <select id="form-maquina" required class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccione una máquina...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Operario Solicitante</label>
+                    <select id="form-operario" required class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                        <option value="">Seleccione un operario...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Prioridad</label>
+                    <select id="form-prioridad" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                        <option value="Baja">Baja</option>
+                        <option value="Media" selected>Media</option>
+                        <option value="Alta">Alta</option>
+                        <option value="Urgente">Urgente</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1">Descripción del Problema / Falla</label>
+                    <textarea id="form-descripcion" rows="4" required placeholder="Describa la anomalía que presenta la máquina..." class="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg text-sm transition shadow">
+                    <i class="fas fa-paper-plane mr-1"></i> Enviar Orden de Trabajo
+                </button>
+            </form>
+        </div>
+
+        <!-- SECCIÓN 3: AJUSTES GENERALES -->
+        <div id="sec-ajustes" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h2 class="text-lg font-bold text-gray-800 mb-2">⚙️ Ajustes Generales y Configuración</h2>
+                <p class="text-sm text-gray-600 mb-6">Administra los catálogos de máquinas, personal y credenciales de acceso.</p>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- AÑADIR MÁQUINA -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2 text-sm">Añadir Máquina a la Lista</h3>
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="nuevaMaquinaInput" placeholder="Ej: Torno CNC 01" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="agregarMaquinaLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
+                        </div>
+                        <div id="lista-maquinas-config" class="max-h-40 overflow-y-auto border p-2 rounded bg-white">
+                            <span class="text-xs text-gray-400">Cargando máquinas...</span>
+                        </div>
+                    </div>
+
+                    <!-- AÑADIR OPERARIO -->
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="font-semibold text-gray-700 mb-2 text-sm">Añadir Operario a la Lista</h3>
+                        <div class="flex gap-2 mb-3">
+                            <input type="text" id="nuevoOperarioInput" placeholder="Ej: Juan Pérez" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="agregarOperarioLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
+                        </div>
+                        <div id="lista-operarios-config" class="max-h-40 overflow-y-auto border p-2 rounded bg-white">
+                            <span class="text-xs text-gray-400">Cargando operarios...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTRASEÑAS DE ACCESO -->
+                <div class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-3 text-sm">Cambiar Contraseñas de Roles</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Contraseña Taller:</label>
+                            <input type="password" id="conf_pass_taller" class="w-full p-2 border rounded text-sm" placeholder="Pass Taller">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Contraseña Supervisor:</label>
+                            <input type="password" id="conf_pass_sup" class="w-full p-2 border rounded text-sm" placeholder="Pass Supervisor">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-600 mb-1">Contraseña Jefe:</label>
+                            <input type="password" id="conf_pass_jefe" class="w-full p-2 border rounded text-sm" placeholder="Pass Jefe">
+                        </div>
+                    </div>
+                    <button onclick="guardarCredenciales()" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold w-full transition">
+                        <i class="fas fa-lock mr-1"></i> Actualizar Contraseñas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
     <!-- NOTIFICACIONES TOAST -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-2 rounded shadow-lg hidden transition">
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl hidden transition z-50 text-sm font-medium">
         Mensaje
     </div>
 
     <!-- FIREBASE SDK MODULAR -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyAernP0Ggb3yUn7aUJwdhN6AUuqLXg0R6k",
             authDomain: "ordenes-fe.firebaseapp.com",
@@ -98,22 +206,28 @@
             measurementId: "G-71B24C0M0K"
         };
 
-        // INICIALIZACIÓN
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // EXPORTAR A WINDOW PARA USO GLOBAL
         window.db = db;
-        window.fb = { collection, getDocs, doc, setDoc };
+        window.fb = { collection, getDocs, doc, setDoc, addDoc, updateDoc };
 
-        // CARGAR DATOS AL INICIAR
         window.addEventListener('DOMContentLoaded', () => {
             cargarConfiguracionUI();
+            cargarOrdenesUI();
         });
     </script>
 
-    <!-- SCRIPT DE LÓGICA DE APLICACIÓN -->
+    <!-- LÓGICA DE APLICACIÓN COMPLETA -->
     <script>
+        let ordenesCache = [];
+        let rolActual = 'operario';
+        let credencialesLocales = {
+            taller: 'taller123',
+            supervisor: 'sup123',
+            jefe: 'jefe123'
+        };
+
         function mostrarToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -121,36 +235,190 @@
             setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
+        async function iniciarSesion() {
+            const rol = document.getElementById('login-rol').value;
+            const pass = document.getElementById('login-pass').value.trim();
+
+            if (rol !== 'operario') {
+                const claveCorrecta = credencialesLocales[rol] || `${rol}123`;
+                if (pass !== claveCorrecta) {
+                    mostrarToast('Contraseña incorrecta para el rol seleccionado');
+                    return;
+                }
+            }
+
+            rolActual = rol;
+            document.getElementById('usuario-status').innerText = `Rol: ${rol.toUpperCase()}`;
+            document.getElementById('pantalla-login').classList.add('hidden');
+            
+            // Mostrar u ocultar pestaña de ajustes según rol
+            if (rolActual === 'jefe' || rolActual === 'supervisor') {
+                document.getElementById('tab-ajustes').classList.remove('hidden');
+            } else {
+                document.getElementById('tab-ajustes').classList.add('hidden');
+            }
+
+            mostrarToast(`Sesión iniciada como: ${rol}`);
+        }
+
+        function cerrarSesion() {
+            document.getElementById('login-pass').value = '';
+            document.getElementById('pantalla-login').classList.remove('hidden');
+            rolActual = 'operario';
+        }
+
+        function cambiarPestana(pestana) {
+            ['ordenes', 'crear', 'ajustes'].forEach(p => {
+                document.getElementById(`sec-${p}`).classList.add('hidden');
+                document.getElementById(`tab-${p}`).classList.remove('text-blue-700', 'border-b-2', 'border-blue-700', 'bg-gray-50');
+                document.getElementById(`tab-${p}`).classList.add('text-gray-500');
+            });
+
+            document.getElementById(`sec-${pestana}`).classList.remove('hidden');
+            document.getElementById(`tab-${pestana}`).classList.add('text-blue-700', 'border-b-2', 'border-blue-700', 'bg-gray-50');
+            document.getElementById(`tab-${pestana}`).classList.remove('text-gray-500');
+        }
+
         async function cargarConfiguracionUI() {
             try {
                 const { getDocs, collection } = window.fb;
                 const snap = await getDocs(collection(window.db, "configuracion"));
                 let listas = { operarios: [], maquinas: [] };
-                let creds = {};
 
                 snap.forEach(d => {
                     if (d.id === "listas") listas = d.data();
-                    if (d.id === "credenciales") creds = d.data();
+                    if (d.id === "credenciales") credencialesLocales = d.data();
                 });
 
-                document.getElementById('conf_pass_jefe').value = creds.jefe || "jefe123";
-                document.getElementById('conf_pass_sup').value = creds.supervisor || "sup123";
-                document.getElementById('conf_pass_taller').value = creds.taller || "taller123";
+                document.getElementById('conf_pass_jefe').value = credencialesLocales.jefe || "jefe123";
+                document.getElementById('conf_pass_sup').value = credencialesLocales.supervisor || "sup123";
+                document.getElementById('conf_pass_taller').value = credencialesLocales.taller || "taller123";
 
+                // Renderizar listas en pantalla de ajustes
                 const maquinasHTML = (listas.maquinas || []).length > 0 
-                    ? listas.maquinas.map(m => `<div class="text-xs bg-gray-100 p-1.5 rounded border mb-1 font-medium text-gray-700">${m}</div>`).join('')
+                    ? listas.maquinas.map(m => `<div class="text-xs bg-gray-100 p-2 rounded border mb-1 font-medium text-gray-700">${m}</div>`).join('')
                     : '<span class="text-xs text-gray-400">Sin máquinas registradas</span>';
-                
                 document.getElementById('lista-maquinas-config').innerHTML = maquinasHTML;
 
                 const operariosHTML = (listas.operarios || []).length > 0 
-                    ? listas.operarios.map(op => `<div class="text-xs bg-gray-100 p-1.5 rounded border mb-1 font-medium text-gray-700">${op}</div>`).join('')
+                    ? listas.operarios.map(op => `<div class="text-xs bg-gray-100 p-2 rounded border mb-1 font-medium text-gray-700">${op}</div>`).join('')
                     : '<span class="text-xs text-gray-400">Sin operarios registrados</span>';
-
                 document.getElementById('lista-operarios-config').innerHTML = operariosHTML;
+
+                // Cargar desplegables del formulario de creación
+                const selectMaquina = document.getElementById('form-maquina');
+                selectMaquina.innerHTML = '<option value="">Seleccione una máquina...</option>' + 
+                    (listas.maquinas || []).map(m => `<option value="${m}">${m}</option>`).join('');
+
+                const selectOperario = document.getElementById('form-operario');
+                selectOperario.innerHTML = '<option value="">Seleccione un operario...</option>' + 
+                    (listas.operarios || []).map(op => `<option value="${op}">${op}</option>`).join('');
+
             } catch (e) {
                 console.error("Error al cargar configuración:", e);
-                mostrarToast('Error de conexión con la base de datos');
+                mostrarToast('Error de conexión con Firestore');
+            }
+        }
+
+        async function cargarOrdenesUI() {
+            try {
+                const { getDocs, collection } = window.fb;
+                const snap = await getDocs(collection(window.db, "ordenes"));
+                ordenesCache = [];
+                snap.forEach(doc => {
+                    ordenesCache.push({ id: doc.id, ...doc.data() });
+                });
+                renderizarOrdenes(ordenesCache);
+            } catch (e) {
+                console.error("Error al cargar órdenes:", e);
+            }
+        }
+
+        function renderizarOrdenes(lista) {
+            const cont = document.getElementById('contenedor-ordenes');
+            if (lista.length === 0) {
+                cont.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-sm text-center text-gray-400 col-span-full">No hay órdenes registradas.</div>`;
+                return;
+            }
+
+            cont.innerHTML = lista.map(o => `
+                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="text-xs font-bold px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full">${o.maquina || 'Sin Máquina'}</span>
+                            <span class="text-xs px-2.5 py-1 rounded-full font-bold ${o.estado === 'Finalizada' ? 'bg-green-100 text-green-700' : (o.estado === 'En Proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')}">
+                                ${o.estado || 'Pendiente'}
+                            </span>
+                        </div>
+                        <p class="text-sm text-gray-800 mb-4 font-medium">${o.descripcion || ''}</p>
+                    </div>
+
+                    <div class="border-t pt-3 space-y-2">
+                        <div class="text-xs text-gray-500 flex justify-between">
+                            <span><strong>Sol:</strong> ${o.operario || 'N/A'}</span>
+                            <span><strong>Prio:</strong> ${o.prioridad || 'Media'}</span>
+                        </div>
+
+                        ${(rolActual === 'taller' || rolActual === 'supervisor' || rolActual === 'jefe') && o.estado !== 'Finalizada' ? `
+                            <div class="flex gap-2 pt-2">
+                                ${o.estado === 'Pendiente' ? `
+                                    <button onclick="cambiarEstadoOrden('${o.id}', 'En Proceso')" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 rounded transition">En Proceso</button>
+                                ` : ''}
+                                <button onclick="cambiarEstadoOrden('${o.id}', 'Finalizada')" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1.5 rounded transition">Finalizar</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function cambiarEstadoOrden(id, nuevoEstado) {
+            try {
+                const { doc, updateDoc } = window.fb;
+                await updateDoc(doc(window.db, "ordenes", id), { estado: nuevoEstado });
+                mostrarToast(`Orden marcada como: ${nuevoEstado}`);
+                await cargarOrdenesUI();
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al actualizar el estado');
+            }
+        }
+
+        function filtrarOrdenes() {
+            const texto = document.getElementById('filtro-buscar').value.toLowerCase();
+            const estado = document.getElementById('filtro-estado').value;
+
+            const filtradas = ordenesCache.filter(o => {
+                const coincideTexto = (o.maquina || '').toLowerCase().includes(texto) || (o.descripcion || '').toLowerCase().includes(texto);
+                const coincideEstado = estado === '' || o.estado === estado;
+                return coincideTexto && coincideEstado;
+            });
+
+            renderizarOrdenes(filtradas);
+        }
+
+        async function guardarNuevaOrden(e) {
+            e.preventDefault();
+            const maquina = document.getElementById('form-maquina').value;
+            const operario = document.getElementById('form-operario').value;
+            const descripcion = document.getElementById('form-descripcion').value;
+            const prioridad = document.getElementById('form-prioridad').value;
+
+            try {
+                const { collection, addDoc } = window.fb;
+                await addDoc(collection(window.db, "ordenes"), {
+                    maquina, operario, descripcion, prioridad,
+                    estado: 'Pendiente',
+                    fecha: new Date().toISOString()
+                });
+
+                document.getElementById('form-orden').reset();
+                mostrarToast('Orden creada correctamente');
+                await cargarOrdenesUI();
+                cambiarPestana('ordenes');
+            } catch (err) {
+                console.error(err);
+                mostrarToast('Error al registrar la orden');
             }
         }
 
@@ -216,6 +484,7 @@
                     supervisor: supervisor,
                     taller: taller
                 });
+                credencialesLocales = { jefe, supervisor, taller };
                 mostrarToast('Contraseñas actualizadas');
             } catch (e) {
                 console.error(e);
