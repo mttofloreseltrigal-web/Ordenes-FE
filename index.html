@@ -3,508 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flores El Trigal - Sede Caribe | Gestión de Mantenimiento</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    
-    <!-- Firebase SDKs (Modular) -->
+    <title>Gestión de Órdenes - Mantenimiento</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen">
+
+    <!-- BARRA SUPERIOR -->
+    <nav class="bg-blue-700 text-white p-4 shadow-lg flex justify-between items-center">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+            <i class="fas fa-tools"></i> Mantenimiento - Órdenes FE
+        </h1>
+        <div id="usuario-status" class="text-sm bg-blue-800 px-3 py-1 rounded-full font-semibold">
+            Modo: Mantenimiento
+        </div>
+    </nav>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="max-w-4xl mx-auto m-6 p-6 bg-white rounded-xl shadow-md">
+        
+        <!-- SECCIÓN DE AJUSTES GENERALES -->
+        <div class="border-b pb-4 mb-6">
+            <h2 class="text-lg font-bold text-gray-800 mb-2">⚙️ Ajustes Generales y Configuración</h2>
+            <p class="text-sm text-gray-600 mb-4">Administra las máquinas, operarios y contraseñas del sistema.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- AGREGAR MÁQUINA -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Añadir Máquina</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="nuevaMaquinaInput" placeholder="Ej: Torno CNC" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="agregarMaquinaLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
+                    </div>
+                    <div id="lista-maquinas-config" class="max-h-32 overflow-y-auto border p-2 rounded bg-white">
+                        <span class="text-xs text-gray-400">Cargando máquinas...</span>
+                    </div>
+                </div>
+
+                <!-- AGREGAR OPERARIO -->
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <h3 class="font-semibold text-gray-700 mb-2">Añadir Operario</h3>
+                    <div class="flex gap-2 mb-3">
+                        <input type="text" id="nuevoOperarioInput" placeholder="Ej: Juan Pérez" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <button onclick="agregarOperarioLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
+                    </div>
+                    <div id="lista-operarios-config" class="max-h-32 overflow-y-auto border p-2 rounded bg-white">
+                        <span class="text-xs text-gray-400">Cargando operarios...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTRASEÑAS -->
+            <div class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="font-semibold text-gray-700 mb-3">Contraseñas de Acceso</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Jefe:</label>
+                        <input type="password" id="conf_pass_jefe" class="w-full p-2 border rounded text-sm" placeholder="Pass Jefe">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Supervisor:</label>
+                        <input type="password" id="conf_pass_sup" class="w-full p-2 border rounded text-sm" placeholder="Pass Supervisor">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 mb-1">Taller:</label>
+                        <input type="password" id="conf_pass_taller" class="w-full p-2 border rounded text-sm" placeholder="Pass Taller">
+                    </div>
+                </div>
+                <button onclick="guardarCredenciales()" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold w-full transition">
+                    Actualizar Contraseñas
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICACIONES TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-2 rounded shadow-lg hidden transition">
+        Mensaje
+    </div>
+
+    <!-- FIREBASE SDK MODULAR -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, setDoc, doc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // =========================================================================
-        // CONFIGURACIÓN DE FIREBASE (Reemplaza con tus credenciales de tu consola)
-        // =========================================================================
+        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
-            apiKey: "TU_API_KEY_AQUI",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROYECTO",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "TU_SENDER_ID",
-            appId: "TU_APP_ID"
+            apiKey: "AIzaSyAernP0Ggb3yUn7aUJwdhN6AUuqLXg0R6k",
+            authDomain: "ordenes-fe.firebaseapp.com",
+            projectId: "ordenes-fe",
+            storageBucket: "ordenes-fe.firebasestorage.app",
+            messagingSenderId: "98577406074",
+            appId: "1:98577406074:web:1578c910f529252052c3c3",
+            measurementId: "G-71B24C0M0K"
         };
 
+        // INICIALIZACIÓN
         const app = initializeApp(firebaseConfig);
-        window.db = getFirestore(app);
-        window.fb = { collection, getDocs, setDoc, doc, addDoc, updateDoc };
-        
-        // Avisar que Firebase está listo
-        window.dispatchEvent(new Event('firebase-ready'));
-    </script>
+        const db = getFirestore(app);
 
-    <style>
-        @keyframes pulse-slow {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.85; transform: scale(1.01); }
-        }
-        .alerta-critica-animada { animation: pulse-slow 1.8s infinite ease-in-out; }
-    </style>
-</head>
-<body class="bg-slate-50 font-sans min-h-screen flex flex-col relative text-slate-800">
+        // EXPORTAR A WINDOW PARA USO GLOBAL
+        window.db = db;
+        window.fb = { collection, getDocs, doc, setDoc };
 
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <header class="bg-slate-900 text-white shadow-md px-6 py-3 flex justify-between items-center z-40 border-b-4 border-[#d4af37]">
-        <div class="flex items-center gap-3">
-            <div class="bg-[#d4af37] text-slate-900 font-bold p-2.5 rounded-xl text-xl shadow-inner flex items-center justify-center">
-                &#9881;
-            </div>
-            <div>
-                <h1 class="text-lg md:text-xl font-bold tracking-wide">FLORES EL TRIGAL <span class="text-[#d4af37] font-semibold text-sm">| SEDE CARIBE</span></h1>
-                <p class="text-[11px] text-slate-400">SISTEMA DE ORDENES DE TRABAJO (CLOUD)</p>
-            </div>
-        </div>
-        <div id="info-usuario-header" class="hidden flex items-center gap-4">
-            <span id="rolActivoTexto" class="text-xs bg-slate-800 text-[#fef08a] px-3 py-1.5 rounded-full font-medium border border-[#d4af37]/50">Rol: Ninguno</span>
-            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Salir</button>
-        </div>
-    </header>
-
-    <div class="flex-1 flex flex-col md:flex-row relative overflow-hidden">
-        <div id="sidebar" class="w-full md:w-64 bg-slate-900 text-slate-200 p-6 flex flex-col justify-between shadow-xl hidden z-30 border-r border-slate-800">
-            <div class="space-y-2">
-                <p class="text-[10px] uppercase tracking-wider text-[#d4af37] font-bold mb-2">MENÚ PRINCIPAL</p>
-                <button onclick="navegarA('panel')" id="btn-nav-panel" class="w-full text-left p-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition cursor-pointer bg-[#d4af37] text-slate-900 shadow-sm font-bold">&#127899; PANEL DE CONTROL</button>
-                <button onclick="navegarA('historial')" id="btn-nav-historial" class="w-full text-left p-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition cursor-pointer text-slate-300">&#128203; HISTORIAL GENERAL</button>
-                <div id="menu-config-admin" class="hidden pt-4">
-                    <p class="text-[10px] uppercase tracking-wider text-[#d4af37] font-bold mb-2">ADMINISTRACIÓN</p>
-                    <button onclick="navegarA('config')" id="btn-nav-config" class="w-full text-left p-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition cursor-pointer text-slate-300">⚙️ AJUSTES GENERALES</button>
-                </div>
-            </div>
-            <div class="mt-8 border-t border-slate-800 pt-4 text-center">
-                <p class="text-[10px] text-slate-500">Trigal Caribe v3.2 - GitHub Pages</p>
-            </div>
-        </div>
-
-        <div class="flex-1 p-4 md:p-8 overflow-y-auto max-h-[calc(100vh-65px)] bg-white">
-            
-            <!-- LOGIN -->
-            <div id="pantalla-login" class="max-w-md mx-auto mt-12 bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
-                <div class="text-center mb-6">
-                    <div class="inline-block bg-slate-900 p-3 rounded-2xl border border-[#d4af37] mb-2">
-                        <span class="text-3xl">&#128668;</span>
-                    </div>
-                    <h2 class="text-2xl font-bold text-[#d4af37]">ACCESO AL SISTEMA</h2>
-                    <p class="text-xs font-bold text-[#d4af37] uppercase tracking-wider">FLORES EL TRIGAL - SEDE CARIBE</p>
-                </div>
-                <form onsubmit="login(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold text-[#0f172a] uppercase mb-1">USUARIO</label>
-                        <select id="loginRol" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
-                            <option value="jefe">&#128296; MANTENIMIENTO</option>
-                            <option value="supervisor">&#128119; SUPERVISOR</option>
-                            <option value="taller">⚙️ TALLER</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-[#0f172a] uppercase mb-1">CLAVE DE ACCESO</label>
-                        <input type="password" id="loginClave" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="••••••••">
-                    </div>
-                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#d4af37] font-bold py-3 rounded-xl transition cursor-pointer text-sm shadow-md border border-[#d4af37]/30">INGRESAR AL SISTEMA</button>
-                </form>
-            </div>
-
-            <!-- CONTENEDOR DE ROLES -->
-            <div id="contenedor-roles" class="hidden">
-                
-                <!-- JEFE -->
-                <div id="rol-jefe" class="subseccion hidden space-y-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-sm border border-[#d4af37]/40">
-                        <div>
-                            <h2 class="text-xl font-bold text-white flex items-center gap-2">&#128296; PANEL DE CONTROL <span class="text-[#d4af37] text-sm font-semibold">| MANTENIMIENTO</span></h2>
-                            <p class="text-xs text-slate-400">Asigne técnicos, prioridades, revise cierres de taller.</p>
-                        </div>
-                        <div class="flex gap-2 flex-wrap">
-                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
-                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">Pendientes</span>
-                                <span id="kpi-pendientes" class="text-base font-bold text-white">0</span>
-                            </div>
-                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
-                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">En Taller</span>
-                                <span id="kpi-proceso" class="text-base font-bold text-white">0</span>
-                            </div>
-                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
-                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">Por Aprobar</span>
-                                <span id="kpi-revision" class="text-base font-bold text-white">0</span>
-                            </div>
-                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
-                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">Finalizadas</span>
-                                <span id="kpi-finalizadas" class="text-base font-bold text-emerald-400">0</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <h3 class="text-md font-bold text-slate-900">&#128203; BANDEJA DE ÓRDENES</h3>
-                        <div id="lista-jefe-gestion" class="space-y-3"></div>
-                    </div>
-                </div>
-
-                <!-- SUPERVISOR -->
-                <div id="rol-supervisor" class="subseccion hidden max-w-2xl mx-auto space-y-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <h2 class="text-xl font-bold text-slate-900 mb-1">&#128203; NUEVA SOLICITUD</h2>
-                        <p class="text-xs text-slate-500 mb-6">REPORTE NOVEDADES A TALLER</p>
-                        <form onsubmit="enviarSolicitudSupervisor(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">NOMBRE SOLICITANTE</label>
-                                <input type="text" id="sup_solicitante" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">NOMBRE EQUIPO</label>
-                                <select id="sup_maquina" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
-                                    <option value="">Seleccione máquina...</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">UBICACIÓN</label>
-                                <input type="text" id="sup_ubicacion" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="Ej: Bloque 3">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">NOVEDAD / DESCRIPCIÓN</label>
-                                <textarea id="sup_resumen" required rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="¿Qué falla observa?"></textarea>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">FOTO DE EVIDENCIA</label>
-                                <input type="file" id="sup_foto" accept="image/*" required onchange="comprimirYConvertirImagen(this)" class="w-full text-xs text-slate-500 cursor-pointer">
-                            </div>
-                            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#d4af37] font-bold py-3 rounded-xl transition cursor-pointer text-sm">ENVIAR ORDEN</button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- TALLER -->
-                <div id="rol-taller" class="subseccion hidden space-y-6">
-                    <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg border-b-4 border-[#d4af37]">
-                        <h2 class="text-2xl font-extrabold">⚙️ MONITOR DE TALLER</h2>
-                        <p class="text-sm text-slate-300 mt-1">Órdenes activas en la nube.</p>
-                    </div>
-                    <div id="lista-taller-tv" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
-                </div>
-
-                <!-- CONFIGURACIÓN -->
-                <div id="vista-config" class="subseccion hidden max-w-5xl mx-auto space-y-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
-                        <h2 class="text-xl font-bold text-slate-900">⚙️ AJUSTES GENERALES</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div class="bg-slate-50 p-5 rounded-2xl border space-y-3">
-                                <h3 class="text-sm font-bold uppercase">Claves</h3>
-                                <form onsubmit="guardarCredenciales(event)" class="space-y-2">
-                                    <input type="text" id="conf_pass_jefe" placeholder="Clave Jefe" class="w-full p-2 bg-white border rounded text-xs" required>
-                                    <input type="text" id="conf_pass_sup" placeholder="Clave Sup" class="w-full p-2 bg-white border rounded text-xs" required>
-                                    <input type="text" id="conf_pass_taller" placeholder="Clave Taller" class="w-full p-2 bg-white border rounded text-xs" required>
-                                    <button type="submit" class="w-full bg-slate-900 text-[#fef08a] text-xs font-bold py-2 rounded">Guardar Claves</button>
-                                </form>
-                            </div>
-                            <div class="bg-slate-50 p-5 rounded-2xl border space-y-3">
-                                <h3 class="text-sm font-bold uppercase">Máquinas</h3>
-                                <div class="flex gap-2">
-                                    <input type="text" id="nuevaMaquinaInput" placeholder="Nueva máquina" class="flex-1 p-2 bg-white border rounded text-xs">
-                                    <button onclick="agregarMaquinaLista()" class="bg-slate-900 text-[#fef08a] text-xs font-bold px-2 rounded">Añadir</button>
-                                </div>
-                                <div id="lista-maquinas-config" class="space-y-1 max-h-40 overflow-y-auto"></div>
-                            </div>
-                            <div class="bg-slate-50 p-5 rounded-2xl border space-y-3">
-                                <h3 class="text-sm font-bold uppercase">Operarios</h3>
-                                <div class="flex gap-2">
-                                    <input type="text" id="nuevoOperarioInput" placeholder="Nuevo operario" class="flex-1 p-2 bg-white border rounded text-xs">
-                                    <button onclick="agregarOperarioLista()" class="bg-slate-900 text-[#fef08a] text-xs font-bold px-2 rounded">Añadir</button>
-                                </div>
-                                <div id="lista-operarios-config" class="space-y-1 max-h-40 overflow-y-auto"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- HISTORIAL -->
-                <div id="vista-historial" class="subseccion hidden space-y-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                        <h2 class="text-xl font-bold text-slate-900">&#128203; Historial General</h2>
-                    </div>
-                    <div id="contenedor-tarjetas-historial" class="space-y-3"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL ASIGNAR -->
-    <div id="modalAsignarJefe" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h3 class="text-lg font-bold">Asignar Orden</h3>
-            <form onsubmit="procesarAsignacionJefe(event)" class="space-y-3">
-                <input type="hidden" id="asignarId">
-                <select id="jefe_asignar_responsable" class="w-full p-3 bg-slate-50 border rounded-xl text-sm" required></select>
-                <button type="submit" class="w-full bg-slate-900 text-[#fef08a] py-2 rounded-xl text-xs font-bold">Enviar a Taller</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        let fotoTemporal = "";
-        let usuarioAutenticado = null;
-        let solicitudesCache = [];
-
-        window.addEventListener('firebase-ready', async () => {
-            await verificarEInicializarBase();
+        // CARGAR DATOS AL INICIAR
+        window.addEventListener('DOMContentLoaded', () => {
             cargarConfiguracionUI();
         });
+    </script>
 
-        async function verificarEInicializarBase() {
-            const { getDocs, collection, setDoc, doc } = window.fb;
-            const snap = await getDocs(collection(window.db, "configuracion"));
-            if (snap.empty) {
-                await setDoc(doc(window.db, "configuracion", "credenciales"), { jefe: "jefe123", supervisor: "sup123", taller: "taller123" });
-                await setDoc(doc(window.db, "configuracion", "listas"), {
-                    operarios: ["Martin Sepúlveda", "Rubén Ramírez", "Álvaro Giraldo"],
-                    maquinas: ["Faja Transportadora B", "Caldera Principal", "Compresor de Aire A"]
-                });
-            }
-        }
-
-        async function obtenerDatosFirestore(coleccion) {
-            const { getDocs, collection } = window.fb;
-            const querySnapshot = await getDocs(collection(window.db, coleccion));
-            let data = [];
-            querySnapshot.forEach((d) => data.push({ id: d.id, ...d.data() }));
-            return data;
-        }
-
-        function mostrarToast(mensaje) {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-xs font-bold bg-slate-900 text-[#fef08a] border-l-4 border-[#d4af37]`;
-            toast.innerText = mensaje;
-            container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
-        }
-
-        async function login(e) {
-            e.preventDefault();
-            const rol = document.getElementById('loginRol').value;
-            const clave = document.getElementById('loginClave').value;
-
-            const { getDocs, collection } = window.fb;
-            const querySnapshot = await getDocs(collection(window.db, "configuracion"));
-            let creds = { jefe: "jefe123", supervisor: "sup123", taller: "taller123" };
-            querySnapshot.forEach(d => { if(d.id === "credenciales") creds = d.data(); });
-
-            if (creds[rol] && creds[rol] === clave) {
-                usuarioAutenticado = rol;
-                document.getElementById('pantalla-login').classList.add('hidden');
-                document.getElementById('contenedor-roles').classList.remove('hidden');
-                document.getElementById('sidebar').classList.remove('hidden');
-                document.getElementById('info-usuario-header').classList.remove('hidden');
-                document.getElementById('rolActivoTexto').innerText = `Rol: ${rol.toUpperCase()}`;
-                
-                if (rol === 'jefe') document.getElementById('menu-config-admin').classList.remove('hidden');
-                navegarA('panel');
-                mostrarToast(`Bienvenido, ${rol.toUpperCase()}`);
-            } else {
-                mostrarToast('Clave incorrecta');
-            }
-        }
-
-        function logout() {
-            usuarioAutenticado = null;
-            document.getElementById('pantalla-login').classList.remove('hidden');
-            document.getElementById('contenedor-roles').classList.add('hidden');
-            document.getElementById('sidebar').classList.add('hidden');
-            document.getElementById('info-usuario-header').classList.add('hidden');
-        }
-
-        async function navegarA(seccion) {
-            document.querySelectorAll('.subseccion').forEach(el => el.classList.add('hidden'));
-            if (seccion === 'panel') {
-                if (usuarioAutenticado === 'jefe') {
-                    document.getElementById('rol-jefe').classList.remove('hidden');
-                    await cargarPanelJefe();
-                } else if (usuarioAutenticado === 'supervisor') {
-                    document.getElementById('rol-supervisor').classList.remove('hidden');
-                    await cargarSelectMaquinasSupervisor();
-                } else if (usuarioAutenticado === 'taller') {
-                    document.getElementById('rol-taller').classList.remove('hidden');
-                    await cargarMonitorTaller();
-                }
-            } else if (seccion === 'historial') {
-                document.getElementById('vista-historial').classList.remove('hidden');
-                await cargarHistorial();
-            } else if (seccion === 'config' && usuarioAutenticado === 'jefe') {
-                document.getElementById('vista-config').classList.remove('hidden');
-                await cargarConfiguracionUI();
-            }
-        }
-
-        async function cargarPanelJefe() {
-            solicitudesCache = await obtenerDatosFirestore("solicitudes");
-            let pendientes = 0, proceso = 0, revision = 0, finalizadas = 0;
-            let html = "";
-
-            solicitudesCache.forEach(req => {
-                if (req.estado === 'pendiente') pendientes++;
-                if (req.estado === 'proceso') proceso++;
-                if (req.estado === 'revision') revision++;
-                if (req.estado === 'finalizado') finalizadas++;
-
-                if (req.estado === 'pendiente') {
-                    html += `<div class="bg-white p-4 rounded-xl border flex justify-between items-center shadow-sm">
-                        <div>
-                            <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-bold">PENDIENTE</span>
-                            <h4 class="font-bold text-sm text-slate-900 mt-1">${req.maquina}</h4>
-                            <p class="text-xs text-slate-500">${req.resumen}</p>
-                        </div>
-                        <button onclick="abrirModalAsignarJefe('${req.id}')" class="bg-slate-900 text-[#fef08a] px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Asignar</button>
-                    </div>`;
-                }
-            });
-
-            document.getElementById('kpi-pendientes').innerText = pendientes;
-            document.getElementById('kpi-proceso').innerText = proceso;
-            document.getElementById('kpi-revision').innerText = revision;
-            document.getElementById('kpi-finalizadas').innerText = finalizadas;
-            document.getElementById('lista-jefe-gestion').innerHTML = html || '<p class="text-xs text-slate-400">No hay órdenes pendientes.</p>';
-        }
-
-        async function enviarSolicitudSupervisor(e) {
-            e.preventDefault();
-            const nuevaOrden = {
-                solicitante: document.getElementById('sup_solicitante').value,
-                maquina: document.getElementById('sup_maquina').value,
-                ubicacion: document.getElementById('sup_ubicacion').value,
-                resumen: document.getElementById('sup_resumen').value,
-                fotoSup: fotoTemporal,
-                estado: 'pendiente',
-                fecha: new Date().toISOString()
-            };
-            const { addDoc, collection } = window.fb;
-            await addDoc(collection(window.db, "solicitudes"), nuevaOrden);
-            mostrarToast('Orden enviada a Mantenimiento');
-            e.target.reset();
-            fotoTemporal = "";
-        }
-
-        async function cargarSelectMaquinasSupervisor() {
-            const { getDocs, collection } = window.fb;
-            const snap = await getDocs(collection(window.db, "configuracion"));
-            let maquinas = [];
-            snap.forEach(d => { if(d.id === "listas") maquinas = d.data().maquinas || []; });
-            document.getElementById('sup_maquina').innerHTML = '<option value="">Seleccione máquina...</option>' + maquinas.map(m => `<option value="${m}">${m}</option>`).join('');
-        }
-
-        function comprimirYConvertirImagen(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => { fotoTemporal = e.target.result; };
-                reader.readAsDataURL(file);
-            }
+    <!-- SCRIPT DE LÓGICA DE APLICACIÓN -->
+    <script>
+        function mostrarToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
         }
 
         async function cargarConfiguracionUI() {
-            const { getDocs, collection } = window.fb;
-            const snap = await getDocs(collection(window.db, "configuracion"));
-            let listas = { operarios: [], maquinas: [] };
-            let creds = {};
-            snap.forEach(d => {
-                if(d.id === "listas") listas = d.data();
-                if(d.id === "credenciales") creds = d.data();
-            });
+            try {
+                const { getDocs, collection } = window.fb;
+                const snap = await getDocs(collection(window.db, "configuracion"));
+                let listas = { operarios: [], maquinas: [] };
+                let creds = {};
 
-            document.getElementById('conf_pass_jefe').value = creds.jefe || "";
-            document.getElementById('conf_pass_sup').value = creds.supervisor || "";
-            document.getElementById('conf_pass_taller').value = creds.taller || "";
+                snap.forEach(d => {
+                    if (d.id === "listas") listas = d.data();
+                    if (d.id === "credenciales") creds = d.data();
+                });
 
-            document.getElementById('lista-maquinas-config').innerHTML = (listas.maquinas || []).map(m => `<div class="text-xs bg-white p-1 rounded border">${m}</div>`).join('');
-            document.getElementById('lista-operarios-config').innerHTML = (listas.operarios || []).map(op => `<div class="text-xs bg-white p-1 rounded border">${op}</div>`).join('');
-        }
+                document.getElementById('conf_pass_jefe').value = creds.jefe || "jefe123";
+                document.getElementById('conf_pass_sup').value = creds.supervisor || "sup123";
+                document.getElementById('conf_pass_taller').value = creds.taller || "taller123";
 
-        async function guardarCredenciales(e) {
-            e.preventDefault();
-            const { setDoc, doc } = window.fb;
-            await setDoc(doc(window.db, "configuracion", "credenciales"), {
-                jefe: document.getElementById('conf_pass_jefe').value,
-                supervisor: document.getElementById('conf_pass_sup').value,
-                taller: document.getElementById('conf_pass_taller').value
-            });
-            mostrarToast('Credenciales actualizadas en la nube');
+                const maquinasHTML = (listas.maquinas || []).length > 0 
+                    ? listas.maquinas.map(m => `<div class="text-xs bg-gray-100 p-1.5 rounded border mb-1 font-medium text-gray-700">${m}</div>`).join('')
+                    : '<span class="text-xs text-gray-400">Sin máquinas registradas</span>';
+                
+                document.getElementById('lista-maquinas-config').innerHTML = maquinasHTML;
+
+                const operariosHTML = (listas.operarios || []).length > 0 
+                    ? listas.operarios.map(op => `<div class="text-xs bg-gray-100 p-1.5 rounded border mb-1 font-medium text-gray-700">${op}</div>`).join('')
+                    : '<span class="text-xs text-gray-400">Sin operarios registrados</span>';
+
+                document.getElementById('lista-operarios-config').innerHTML = operariosHTML;
+            } catch (e) {
+                console.error("Error al cargar configuración:", e);
+                mostrarToast('Error de conexión con la base de datos');
+            }
         }
 
         async function agregarMaquinaLista() {
-            let val = document.getElementById('nuevaMaquinaInput').value.trim();
-            if(!val) return;
-            const { getDocs, doc, setDoc, collection } = window.fb;
-            const snap = await getDocs(collection(window.db, "configuracion"));
-            let listas = { operarios: [], maquinas: [] };
-            snap.forEach(d => { if(d.id === "listas") listas = d.data(); });
-            listas.maquinas.push(val);
-            await setDoc(doc(window.db, "configuracion", "listas"), listas);
-            document.getElementById('nuevaMaquinaInput').value = "";
-            cargarConfiguracionUI();
-            mostrarToast('Máquina añadida');
+            const input = document.getElementById('nuevaMaquinaInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            try {
+                const { getDocs, doc, setDoc, collection } = window.fb;
+                const snap = await getDocs(collection(window.db, "configuracion"));
+                let listas = { operarios: [], maquinas: [] };
+                
+                snap.forEach(d => { if(d.id === "listas") listas = d.data(); });
+                if (!listas.maquinas) listas.maquinas = [];
+                
+                listas.maquinas.push(val);
+
+                await setDoc(doc(window.db, "configuracion", "listas"), listas);
+                input.value = "";
+                await cargarConfiguracionUI();
+                mostrarToast('Máquina guardada con éxito');
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al guardar la máquina');
+            }
         }
 
         async function agregarOperarioLista() {
-            let val = document.getElementById('nuevoOperarioInput').value.trim();
-            if(!val) return;
-            const { getDocs, doc, setDoc, collection } = window.fb;
-            const snap = await getDocs(collection(window.db, "configuracion"));
-            let listas = { operarios: [], maquinas: [] };
-            snap.forEach(d => { if(d.id === "listas") listas = d.data(); });
-            listas.operarios.push(val);
-            await setDoc(doc(window.db, "configuracion", "listas"), listas);
-            document.getElementById('nuevoOperarioInput').value = "";
-            cargarConfiguracionUI();
-            mostrarToast('Operario añadido');
+            const input = document.getElementById('nuevoOperarioInput');
+            const val = input.value.trim();
+            if (!val) return;
+
+            try {
+                const { getDocs, doc, setDoc, collection } = window.fb;
+                const snap = await getDocs(collection(window.db, "configuracion"));
+                let listas = { operarios: [], maquinas: [] };
+                
+                snap.forEach(d => { if(d.id === "listas") listas = d.data(); });
+                if (!listas.operarios) listas.operarios = [];
+                
+                listas.operarios.push(val);
+
+                await setDoc(doc(window.db, "configuracion", "listas"), listas);
+                input.value = "";
+                await cargarConfiguracionUI();
+                mostrarToast('Operario guardado con éxito');
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al guardar el operario');
+            }
         }
 
-        async function cargarMonitorTaller() {
-            solicitudesCache = await obtenerDatosFirestore("solicitudes");
-            let html = "";
-            solicitudesCache.forEach(req => {
-                if (req.estado === 'proceso') {
-                    html += `<div class="bg-white p-5 rounded-2xl border shadow-sm space-y-2">
-                        <h4 class="font-bold text-sm text-slate-900">${req.maquina}</h4>
-                        <p class="text-xs text-slate-500">${req.resumen}</p>
-                        <p class="text-xs font-bold text-slate-700">Técnico: ${req.responsable}</p>
-                    </div>`;
-                }
-            });
-            document.getElementById('lista-taller-tv').innerHTML = html || '<p class="text-xs text-slate-400">No hay órdenes en proceso.</p>';
-        }
+        async function guardarCredenciales() {
+            const jefe = document.getElementById('conf_pass_jefe').value;
+            const supervisor = document.getElementById('conf_pass_sup').value;
+            const taller = document.getElementById('conf_pass_taller').value;
 
-        async function abrirModalAsignarJefe(id) {
-            document.getElementById('asignarId').value = id;
-            const { getDocs, collection } = window.fb;
-            const snap = await getDocs(collection(window.db, "configuracion"));
-            let operarios = [];
-            snap.forEach(d => { if(d.id === "listas") operarios = d.data().operarios || []; });
-            document.getElementById('jefe_asignar_responsable').innerHTML = '<option value="">Seleccione operario...</option>' + operarios.map(op => `<option value="${op}">${op}</option>`).join('');
-            document.getElementById('modalAsignarJefe').classList.remove('hidden');
-        }
-
-        async function procesarAsignacionJefe(e) {
-            e.preventDefault();
-            const id = document.getElementById('asignarId').value;
-            const { updateDoc, doc } = window.fb;
-            await updateDoc(doc(window.db, "solicitudes", id), {
-                responsable: document.getElementById('jefe_asignar_responsable').value,
-                estado: 'proceso'
-            });
-            document.getElementById('modalAsignarJefe').classList.add('hidden');
-            cargarPanelJefe();
-            mostrarToast('Orden asignada');
-        }
-
-        async function cargarHistorial() {
-            solicitudesCache = await obtenerDatosFirestore("solicitudes");
-            let html = "";
-            solicitudesCache.forEach(req => {
-                if (req.estado === 'finalizado') {
-                    html += `<div class="bg-white p-4 rounded-xl border shadow-sm text-xs space-y-1">
-                        <p class="font-bold text-slate-900">${req.maquina} - Ubicación: ${req.ubicacion}</p>
-                        <p class="text-emerald-600 font-bold">ESTADO: FINALIZADO</p>
-                    </div>`;
-                }
-            });
-            document.getElementById('contenedor-tarjetas-historial').innerHTML = html || '<p class="text-xs text-slate-400">Sin historial.</p>';
+            try {
+                const { doc, setDoc } = window.fb;
+                await setDoc(doc(window.db, "configuracion", "credenciales"), {
+                    jefe: jefe,
+                    supervisor: supervisor,
+                    taller: taller
+                });
+                mostrarToast('Contraseñas actualizadas');
+            } catch (e) {
+                console.error(e);
+                mostrarToast('Error al actualizar las contraseñas');
+            }
         }
     </script>
 </body>
