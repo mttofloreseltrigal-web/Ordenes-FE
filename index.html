@@ -3,493 +3,1030 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Órdenes de Trabajo - Mantenimiento</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Flores El Trigal - Sede Caribe | Gestión de Mantenimiento</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.01); }
+        }
+        .alerta-critica-animada { animation: pulse-slow 1.8s infinite ease-in-out; }
+        
+        :root {
+            --trigal-blue: #0f172a;        
+            --trigal-gold: #d4af37;        
+            --trigal-gold-light: #fef08a; 
+        }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans min-h-screen pb-10">
+<body class="bg-slate-50 font-sans min-h-screen flex flex-col relative text-slate-800">
 
-    <!-- PANTALLA DE LOGIN -->
-    <div id="pantalla-login" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full mx-4">
-            <div class="text-center mb-6">
-                <i class="fas fa-tools text-4xl text-blue-700 mb-2"></i>
-                <h2 class="text-2xl font-bold text-gray-800">Órdenes de Trabajo</h2>
-                <p class="text-xs text-gray-500">Sede Caribe</p>
+    <!-- CONTENEDOR DE TOASTS -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- CORPORATIVO -->
+    <header class="bg-slate-900 text-white shadow-md px-6 py-3 flex justify-between items-center z-40 border-b-4 border-[#d4af37]">
+        <div class="flex items-center gap-3">
+            <div class="bg-[#d4af37] text-slate-900 font-bold p-2.5 rounded-xl text-xl shadow-inner flex items-center justify-center">
+                ⚙
             </div>
+            <div>
+                <h1 class="text-lg md:text-xl font-bold tracking-wide">FLORES EL TRIGAL <span class="text-[#d4af37] font-semibold text-sm">| SEDE CARIBE</span></h1>
+                <p class="text-[11px] text-slate-400">SISTEMA DE ORDENES DE TRABAJO</p>
+            </div>
+        </div>
+        <div id="info-usuario-header" class="hidden flex items-center gap-4">
+            <span id="rolActivoTexto" class="text-xs bg-slate-800 text-[#fef08a] px-3 py-1.5 rounded-full font-medium border border-[#d4af37]/50">Rol: Ninguno</span>
+            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition cursor-pointer">Salir</button>
+        </div>
+    </header>
+
+    <div class="flex-1 flex flex-col md:flex-row relative overflow-hidden">
+
+        <!-- NAVEGACIÓN -->
+        <div id="sidebar" class="w-full md:w-64 bg-slate-900 text-slate-200 p-6 flex flex-col justify-between shadow-xl hidden z-30 border-r border-slate-800">
+            <div class="space-y-2">
+                <p class="text-[10px] uppercase tracking-wider text-[#d4af37] font-bold mb-2">MENÚ PRINCIPAL</p>
+                <button onclick="navegarA('panel')" id="btn-nav-panel" class="w-full text-left p-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition cursor-pointer bg-[#d4af37] text-slate-900 shadow-sm font-bold">🎛 PANEL DE CONTROL</button>
+                <button onclick="navegarA('historial')" id="btn-nav-historial" class="w-full text-left p-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition cursor-pointer text-slate-300">📋 HISTORIAL GENERAL</button>
+                <div id="menu-config-admin" class="hidden pt-4">
+                    <p class="text-[10px] uppercase tracking-wider text-[#d4af37] font-bold mb-2">ADMINISTRACIÓN</p>
+                    <button onclick="navegarA('config')" id="btn-nav-config" class="w-full text-left p-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 hover:text-white transition cursor-pointer text-slate-300">⚙️ AJUSTES GENERALES</button>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-slate-800 pt-4 text-center">
+                <p class="text-[10px] text-slate-500">Trigal Caribe v3.0 - Mantenimiento</p>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR PRINCIPAL -->
+        <div class="flex-1 p-4 md:p-8 overflow-y-auto max-h-[calc(100vh-65px)] bg-white">
             
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Seleccionar Rol</label>
-                    <select id="login-rol" class="w-full p-2.5 border rounded-lg text-sm bg-gray-50 focus:ring-2 focus:ring-blue-500">
-                        <option value="operario">Operario / Solicitante</option>
-                        <option value="taller">Taller / Mantenimiento</option>
-                        <option value="supervisor">Supervisor</option>
-                        <option value="jefe">Jefe de Mantenimiento</option>
-                    </select>
+            <!-- PANTALLA: LOGIN -->
+            <div id="pantalla-login" class="max-w-md mx-auto mt-12 bg-white p-8 rounded-2xl shadow-xl border border-slate-200">
+                <div class="text-center mb-6">
+                    <div class="inline-block bg-slate-900 p-3 rounded-2xl border border-[#d4af37] mb-2">
+                        <span class="text-3xl">🚜</span>
+                    </div>
+                    <h2 class="text-2xl font-bold text-[#d4af37]">ACCESO AL SISTEMA</h2>
+                    <p class="text-xs font-bold text-[#d4af37] uppercase tracking-wider">FLORES EL TRIGAL - SEDE CARIBE</p>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Contraseña</label>
-                    <input type="password" id="login-pass" placeholder="Ingresa tu contraseña" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                
+                <form onsubmit="login(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-[#0f172a] uppercase mb-1">USUARIO</label>
+                        <select id="loginRol" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
+                            <option value="jefe">🔨 MANTENIMIENTO</option>
+                            <option value="supervisor">👷 SUPERVISOR</option>
+                            <option value="taller">⚙️ TALLER</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-[#0f172a] uppercase mb-1">CLAVE DE ACCESO</label>
+                        <input type="password" id="loginClave" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#d4af37] font-bold py-3 rounded-xl transition cursor-pointer text-sm shadow-md border border-[#d4af37]/30">INGRESAR AL SISTEMA</button>
+                </form>
+            </div>
+
+            <!-- SECCIÓN DINÁMICA DE ROLES -->
+            <div id="contenedor-roles" class="hidden">
+                
+                <!-- PANEL: JEFE DE MANTENIMIENTO -->
+                <div id="rol-jefe" class="subseccion hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-sm border border-[#d4af37]/40">
+                        <div>
+                            <h2 class="text-xl font-bold text-white flex items-center gap-2">🔨 PANEL DE CONTROL <span class="text-[#d4af37] text-sm font-semibold">| MANTENIMIENTO</span></h2>
+                            <p class="text-xs text-slate-400">Asigne técnicos, prioridades, revise cierres parciales de taller e ingrese costos de repuestos.</p>
+                        </div>
+                        <!-- KPIs -->
+                        <div class="flex gap-2 flex-wrap">
+                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
+                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">Pendientes</span>
+                                <span id="kpi-pendientes" class="text-base font-bold text-white">0</span>
+                            </div>
+                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
+                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">En Taller</span>
+                                <span id="kpi-proceso" class="text-base font-bold text-white">0</span>
+                            </div>
+                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
+                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">Por Aprobar</span>
+                                <span id="kpi-revision" class="text-base font-bold text-white">0</span>
+                            </div>
+                            <div class="bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-700 text-center">
+                                <span class="block text-[9px] text-[#d4af37] font-bold uppercase">Finalizadas</span>
+                                <span id="kpi-finalizadas" class="text-base font-bold text-emerald-400">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LISTADO DE GESTIÓN DEL JEFE -->
+                    <div class="space-y-4">
+                        <h3 class="text-md font-bold text-slate-900">📋 BANDEJA DE ÓRDENES (PENDIENTES Y POR REVISIÓN DE CIERRE)</h3>
+                        <div id="lista-jefe-gestion" class="space-y-3"></div>
+                    </div>
                 </div>
-                <button onclick="iniciarSesion()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg text-sm transition shadow">
-                    Ingresar al Sistema
-                </button>
+
+                <!-- PANEL: SUPERVISOR -->
+                <div id="rol-supervisor" class="subseccion hidden max-w-2xl mx-auto space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-900 mb-1">📋 BUZÓN DE SOLICITUDES SUPERVISORES</h2>
+                        <p class="text-xs text-slate-500 mb-6">REPORTE NOVEDADES Y EMITA NUEVAS ÓRDENES A TALLER</p>
+                        
+                        <form onsubmit="enviarSolicitudSupervisor(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">NOMBRE SOLICITANTE</label>
+                                <input type="text" id="sup_solicitante" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">NOMBRE EQUIPO</label>
+                                    <select id="sup_maquina" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
+                                        <option value="">Seleccione máquina...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">NÚMERO DE EQUIPO</label>
+                                    <input type="text" id="sup_num_maquina" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="Ej: 23">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">UBICACIÓN</label>
+                                <input type="text" id="sup_ubicacion" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="Ej: Bloque 3 - Poscosecha">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">NOVEDAD / DESCRIPCIÓN</label>
+                                <textarea id="sup_resumen" required rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="¿Qué falla o requerimiento observa?"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">FOTO DE EVIDENCIA</label>
+                                <input type="file" id="sup_foto" accept="image/*" required onchange="comprimirYConvertirImagen(this, 'sup')" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 cursor-pointer">
+                            </div>
+                            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#d4af37] font-bold py-3 rounded-xl transition cursor-pointer text-sm shadow-sm border border-[#d4af37]/50">ENVIAR ORDEN A MANTENIMIENTO</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- PANEL: MONITOR DE TALLER (OPTIMIZADO TV & PANTALLAS GRANDES) -->
+                <div id="rol-taller" class="subseccion hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-lg border-b-4 border-[#d4af37]">
+                        <div>
+                            <div class="flex items-center gap-3">
+                                <span class="inline-block w-4 h-4 bg-emerald-400 rounded-full animate-ping"></span>
+                                <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">⚙️ MONITOR DE TALLER EN VIVO</h2>
+                            </div>
+                            <p class="text-sm text-slate-300 mt-1">Control visual de órdenes activas - Sede Caribe.</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <input type="text" id="filtroOperario" placeholder="🔍 Filtrar por Operario o Máquina..." oninput="cargarMonitorTaller()" class="p-3 bg-slate-800 border border-slate-600 text-white rounded-xl text-sm outline-none focus:border-[#d4af37] w-full sm:w-80 placeholder-slate-400 font-medium">
+                        </div>
+                    </div>
+
+                    <!-- Cuadrícula de órdenes optimizada para máxima legibilidad -->
+                    <div id="lista-taller-tv" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6"></div>
+                </div>
+
+                <!-- PANTALLA DE AJUSTES Y CREDENCIALES -->
+                <div id="vista-config" class="subseccion hidden max-w-5xl mx-auto space-y-6">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900 mb-1">⚙️ AJUSTES GENERALES</h2>
+                            <p class="text-xs text-slate-500">Administre las claves, las máquinas, el personal técnico y los datos del sistema.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <!-- Claves -->
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                                <h3 class="text-sm font-bold text-slate-900 uppercase">🔎 Claves de Acceso</h3>
+                                <form onsubmit="guardarCredenciales(event)" class="space-y-3">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">CLAVE MANTENIMIENTO</label>
+                                        <input type="text" id="conf_pass_jefe" required class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">CLAVE SUPERVISOR</label>
+                                        <input type="text" id="conf_pass_sup" required class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-600 mb-1">CLAVE TALLER</label>
+                                        <input type="text" id="conf_pass_taller" required class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
+                                    </div>
+                                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">Actualizar Credenciales</button>
+                                </form>
+                            </div>
+
+                            <!-- EQUIPOS -->
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                                <h3 class="text-sm font-bold text-slate-900 uppercase">🏗 Nombre de Máquinas</h3>
+                                <div class="flex gap-2">
+                                    <input type="text" id="nuevaMaquinaInput" placeholder="Nombre de máquina/equipo" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
+                                    <button type="button" onclick="agregarMaquinaLista()" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">+ Añadir</button>
+                                </div>
+                                <div id="lista-maquinas-config" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                            </div>
+
+                            <!-- Operarios -->
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
+                                <h3 class="text-sm font-bold text-slate-900 uppercase">👷 Operarios de Taller</h3>
+                                <div class="flex gap-2">
+                                    <input type="text" id="nuevoOperarioInput" placeholder="Nombre nuevo operario" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
+                                    <button type="button" onclick="agregarOperarioLista()" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">+ Añadir</button>
+                                </div>
+                                <div id="lista-operarios-config" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                            </div>
+                        </div>
+
+                        <!-- ZONA DE PELIGRO / REINICIO -->
+                        <div class="p-4 bg-red-50 rounded-2xl border border-red-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h4 class="text-xs font-bold text-red-800 uppercase">🔄 Reiniciar Órdenes del Sistema</h4>
+                                <p class="text-[11px] text-red-600">Elimina todas las órdenes pendientes, activas, en revisión e historial para empezar desde cero.</p>
+                            </div>
+                            <button type="button" onclick="reiniciarTodasLasOrdenes()" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm shrink-0">Borrar Todas las Órdenes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANTALLA: HISTORIAL GENERAL -->
+                <div id="vista-historial" class="subseccion hidden space-y-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900">📋 Historial General de Mantenimiento</h2>
+                            <p class="text-xs text-slate-500">Órdenes finalizadas, costos totales y repuestos en Flores El Trigal.</p>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto flex-wrap">
+                            <input type="text" id="filtroHistorial" placeholder="🔍 Buscar en historial..." oninput="cargarHistorial()" class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37] w-full md:w-64">
+                            <button onclick="exportarACSV()" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer shadow-sm shrink-0 border border-[#d4af37]/50">📥 Exportar CSV</button>
+                        </div>
+                    </div>
+                    <div id="tabla-historial-vacia" class="hidden p-6 bg-white rounded-2xl border border-slate-200 text-slate-500 text-center text-sm">No hay registros en el historial.</div>
+                    <div id="contenedor-tarjetas-historial" class="space-y-3"></div>
+                </div>
+
             </div>
         </div>
     </div>
 
-    <!-- BARRA SUPERIOR (NAVBAR) -->
-    <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center sticky top-0 z-40">
-        <div class="flex items-center space-x-3">
-            <i class="fas fa-wrench text-2xl"></i>
-            <h1 class="text-xl font-bold">Órdenes FE</h1>
-        </div>
-        <div class="flex items-center gap-4">
-            <span id="usuario-status" class="bg-blue-900 px-3 py-1 rounded-full text-xs font-semibold border border-blue-700">
-                Rol: Invitado
-            </span>
-            <button onclick="cerrarSesion()" class="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full transition">
-                <i class="fas fa-sign-out-alt"></i> Salir
-            </button>
-        </div>
-    </nav>
-
-    <!-- CONTENEDOR PRINCIPAL -->
-    <div class="max-w-6xl mx-auto my-6 px-4">
-        
-        <!-- PESTAÑAS DE NAVEGACIÓN -->
-        <div class="flex border-b border-gray-300 mb-6 bg-white rounded-t-lg overflow-hidden shadow-sm">
-            <button onclick="cambiarPestana('ordenes')" id="tab-ordenes" class="flex-1 py-3 px-4 text-center font-bold text-blue-700 border-b-2 border-blue-700 bg-gray-50 flex items-center justify-center gap-2 text-sm">
-                <i class="fas fa-list-check"></i> Órdenes Activas
-            </button>
-            <button onclick="cambiarPestana('crear')" id="tab-crear" class="flex-1 py-3 px-4 text-center font-bold text-gray-500 hover:text-blue-700 flex items-center justify-center gap-2 text-sm">
-                <i class="fas fa-plus-circle"></i> Nueva Orden
-            </button>
-            <button onclick="cambiarPestana('ajustes')" id="tab-ajustes" class="flex-1 py-3 px-4 text-center font-bold text-gray-500 hover:text-blue-700 flex items-center justify-center gap-2 text-sm">
-                <i class="fas fa-sliders"></i> Ajustes Generales
-            </button>
-        </div>
-
-        <!-- SECCIÓN 1: VISTA DE ÓRDENES -->
-        <div id="sec-ordenes" class="space-y-4">
-            <div class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-4 justify-between items-center">
-                <h2 class="text-lg font-bold text-gray-800">Listado de Órdenes de Trabajo</h2>
-                <div class="flex gap-2 w-full sm:w-auto">
-                    <input type="text" id="filtro-buscar" onkeyup="filtrarOrdenes()" placeholder="Buscar orden..." class="p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-auto">
-                    <select id="filtro-estado" onchange="filtrarOrdenes()" class="p-2 border rounded text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="">Todos los estados</option>
-                        <option value="Pendiente">Pendiente</option>
-                        <option value="En Proceso">En Proceso</option>
-                        <option value="Finalizada">Finalizada</option>
-                    </select>
-                </div>
+    <!-- MODAL DE ASIGNACIÓN Y ENVÍO A TALLER (JEFE DE MANTENIMIENTO) -->
+    <div id="modalAsignarJefe" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4">
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">🔥 Asignar Orden a Taller</h3>
+                <p class="text-xs text-slate-500">Seleccione la prioridad, el tipo de mantenimiento y el operario responsable.</p>
             </div>
-
-            <div id="contenedor-ordenes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div class="bg-white p-6 rounded-lg shadow-sm text-center text-gray-400 col-span-full">
-                    Cargando órdenes de la base de datos...
-                </div>
-            </div>
-        </div>
-
-        <!-- SECCIÓN 2: CREAR NUEVA ÓRDEN -->
-        <div id="sec-crear" class="hidden bg-white p-6 rounded-lg shadow-sm max-w-2xl mx-auto">
-            <h2 class="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Registrar Nueva Orden de Mantenimiento</h2>
-            <form id="form-orden" onsubmit="guardarNuevaOrden(event)" class="space-y-4">
+            
+            <form onsubmit="procesarAsignacionJefe(event)" class="space-y-4">
+                <input type="hidden" id="asignarId">
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Máquina / Equipo</label>
-                    <select id="form-maquina" required class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                        <option value="">Seleccione una máquina...</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Operario Solicitante</label>
-                    <select id="form-operario" required class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                        <option value="">Seleccione un operario...</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Prioridad</label>
-                    <select id="form-prioridad" class="w-full p-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Prioridad *</label>
+                    <select id="jefe_asignar_prioridad" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
                         <option value="Baja">Baja</option>
                         <option value="Media" selected>Media</option>
                         <option value="Alta">Alta</option>
-                        <option value="Urgente">Urgente</option>
+                        <option value="Crítica">Crítica</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-gray-700 mb-1">Descripción del Problema / Falla</label>
-                    <textarea id="form-descripcion" rows="4" required placeholder="Describa la anomalía que presenta la máquina..." class="w-full p-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Mantenimiento *</label>
+                    <select id="jefe_asignar_programa" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
+                        <option value="Correctivo">Correctivo (Falla)</option>
+                        <option value="Preventivo">Preventivo Programado</option>
+                        <option value="Predictivo">Predictivo</option>
+                        <option value="Mejora">Mejora Locativa / Equipos</option>
+                    </select>
                 </div>
-                <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-4 rounded-lg text-sm transition shadow">
-                    <i class="fas fa-paper-plane mr-1"></i> Enviar Orden de Trabajo
-                </button>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Técnico Responsable *</label>
+                    <select id="jefe_asignar_responsable" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
+                        <option value="">Seleccione operario...</option>
+                    </select>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="cerrarModalAsignarJefe()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold rounded-xl transition cursor-pointer shadow-sm border border-[#d4af37]/50">Enviar a Monitor de Taller</button>
+                </div>
             </form>
         </div>
+    </div>
 
-        <!-- SECCIÓN 3: AJUSTES GENERALES -->
-        <div id="sec-ajustes" class="hidden space-y-6">
-            <div class="bg-white p-6 rounded-lg shadow-sm">
-                <h2 class="text-lg font-bold text-gray-800 mb-2">⚙️ Ajustes Generales y Configuración</h2>
-                <p class="text-sm text-gray-600 mb-6">Administra los catálogos de máquinas, personal y credenciales de acceso.</p>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- AÑADIR MÁQUINA -->
-                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h3 class="font-semibold text-gray-700 mb-2 text-sm">Añadir Máquina a la Lista</h3>
-                        <div class="flex gap-2 mb-3">
-                            <input type="text" id="nuevaMaquinaInput" placeholder="Ej: Torno CNC 01" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="agregarMaquinaLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
-                        </div>
-                        <div id="lista-maquinas-config" class="max-h-40 overflow-y-auto border p-2 rounded bg-white">
-                            <span class="text-xs text-gray-400">Cargando máquinas...</span>
-                        </div>
-                    </div>
-
-                    <!-- AÑADIR OPERARIO -->
-                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <h3 class="font-semibold text-gray-700 mb-2 text-sm">Añadir Operario a la Lista</h3>
-                        <div class="flex gap-2 mb-3">
-                            <input type="text" id="nuevoOperarioInput" placeholder="Ej: Juan Pérez" class="flex-1 p-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            <button onclick="agregarOperarioLista()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Guardar</button>
-                        </div>
-                        <div id="lista-operarios-config" class="max-h-40 overflow-y-auto border p-2 rounded bg-white">
-                            <span class="text-xs text-gray-400">Cargando operarios...</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONTRASEÑAS DE ACCESO -->
-                <div class="mt-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                    <h3 class="font-semibold text-gray-700 mb-3 text-sm">Cambiar Contraseñas de Roles</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1">Contraseña Taller:</label>
-                            <input type="password" id="conf_pass_taller" class="w-full p-2 border rounded text-sm" placeholder="Pass Taller">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1">Contraseña Supervisor:</label>
-                            <input type="password" id="conf_pass_sup" class="w-full p-2 border rounded text-sm" placeholder="Pass Supervisor">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-600 mb-1">Contraseña Jefe:</label>
-                            <input type="password" id="conf_pass_jefe" class="w-full p-2 border rounded text-sm" placeholder="Pass Jefe">
-                        </div>
-                    </div>
-                    <button onclick="guardarCredenciales()" class="mt-4 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold w-full transition">
-                        <i class="fas fa-lock mr-1"></i> Actualizar Contraseñas
-                    </button>
-                </div>
+    <!-- MODAL DE CIERRE PARCIAL (OPERARIO) -->
+    <div id="modalCierreParcial" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4">
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">🔥 Realizar Cierre Parcial (Operario)</h3>
+                <p class="text-xs text-slate-500">Ingrese el reporte de trabajo. El Jefe de Mantenimiento revisará los repuestos y asignará los costos.</p>
             </div>
-        </div>
-
-    </div>
-
-    <!-- NOTIFICACIONES TOAST -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-gray-800 text-white px-4 py-3 rounded-lg shadow-xl hidden transition z-50 text-sm font-medium">
-        Mensaje
-    </div>
-
-    <!-- FIREBASE SDK MODULAR -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, setDoc, addDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAernP0Ggb3yUn7aUJwdhN6AUuqLXg0R6k",
-            authDomain: "ordenes-fe.firebaseapp.com",
-            projectId: "ordenes-fe",
-            storageBucket: "ordenes-fe.firebasestorage.app",
-            messagingSenderId: "98577406074",
-            appId: "1:98577406074:web:1578c910f529252052c3c3",
-            measurementId: "G-71B24C0M0K"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        window.db = db;
-        window.fb = { collection, getDocs, doc, setDoc, addDoc, updateDoc };
-
-        window.addEventListener('DOMContentLoaded', () => {
-            cargarConfiguracionUI();
-            cargarOrdenesUI();
-        });
-    </script>
-
-    <!-- LÓGICA DE APLICACIÓN COMPLETA -->
-    <script>
-        let ordenesCache = [];
-        let rolActual = 'operario';
-        let credencialesLocales = {
-            taller: 'taller123',
-            supervisor: 'sup123',
-            jefe: 'jefe123'
-        };
-
-        function mostrarToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.classList.remove('hidden');
-            setTimeout(() => t.classList.add('hidden'), 3000);
-        }
-
-        async function iniciarSesion() {
-            const rol = document.getElementById('login-rol').value;
-            const pass = document.getElementById('login-pass').value.trim();
-
-            if (rol !== 'operario') {
-                const claveCorrecta = credencialesLocales[rol] || `${rol}123`;
-                if (pass !== claveCorrecta) {
-                    mostrarToast('Contraseña incorrecta para el rol seleccionado');
-                    return;
-                }
-            }
-
-            rolActual = rol;
-            document.getElementById('usuario-status').innerText = `Rol: ${rol.toUpperCase()}`;
-            document.getElementById('pantalla-login').classList.add('hidden');
             
-            // Mostrar u ocultar pestaña de ajustes según rol
-            if (rolActual === 'jefe' || rolActual === 'supervisor') {
-                document.getElementById('tab-ajustes').classList.remove('hidden');
+            <form onsubmit="procesarCierreParcial(event)" class="space-y-4">
+                <input type="hidden" id="parcialId">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Comentarios / Acciones Realizadas *</label>
+                    <textarea id="parcialComentarios" required rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="Detalle qué reparaciones se efectuaron..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tiempo Empleado *</label>
+                    <input type="text" id="parcialTiempo" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="Ej: 2 horas / 45 minutos">
+                </div>
+
+                <!-- REPUESTOS SOLICITADOS -->
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="block text-[11px] font-bold text-slate-900 uppercase">Repuestos Utilizados</label>
+                        <button type="button" onclick="agregarFilaRepuesto()" class="bg-slate-900 text-[#fef08a] text-[11px] font-semibold px-2.5 py-1 rounded-lg transition cursor-pointer border border-[#d4af37]/40">+ Añadir Repuesto</button>
+                    </div>
+                    <div id="contenedor-repuestos" class="space-y-2"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Foto del Trabajo Finalizado (Evidencia Después) *</label>
+                    <input type="file" id="parcialFoto" accept="image/*" required onchange="comprimirYConvertirImagen(this, 'parcial')" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 cursor-pointer">
+                </div>
+
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="cerrarModalParcial()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold rounded-xl transition cursor-pointer shadow-sm border border-[#d4af37]/50">Enviar a Revisión del Jefe</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE REVISIÓN Y CIERRE DEFINITIVO (JEFE DE MANTENIMIENTO) -->
+    <div id="modalRevisionJefe" class="fixed inset-0 bg-black/60 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto space-y-4">
+            <div>
+                <h3 class="text-lg font-bold text-slate-900">🔎📝 Revisión y Cierre Definitivo</h3>
+                <p class="text-xs text-slate-500">Verifique el reporte del taller, asigne los costos de repuestos y apruebe el cierre de la orden.</p>
+            </div>
+            
+            <form onsubmit="procesarCierreDefinitivoJefe(event)" class="space-y-4">
+                <input type="hidden" id="revisionId">
+                
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs">
+                    <p><strong>Operario:</strong> <span id="rev_operario"></span></p>
+                    <p><strong>Comentarios de Taller:</strong> <span id="rev_comentarios"></span></p>
+                    <p><strong>Tiempo Invertido:</strong> <span id="rev_tiempo"></span></p>
+                </div>
+
+                <!-- LISTADO PARA ASIGNAR COSTOS A LOS REPUESTOS -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-bold text-slate-900 uppercase">Costos Unitarios de Repuestos</label>
+                    <div id="contenedor-costos-repuestos" class="space-y-2">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center bg-slate-900 text-[#fef08a] p-3 rounded-xl font-bold text-xs">
+                    <span>COSTO TOTAL REPARACIÓN:</span>
+                    <span id="lblCostoTotal" class="text-sm">$ 0.00</span>
+                </div>
+
+                <div class="flex gap-3 justify-end pt-2">
+                    <button type="button" onclick="cerrarModalRevisionJefe()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer">Cancelar</button>
+                    <button type="submit" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-sm">Aprobar y Cerrar Orden Definitivamente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISUALIZACIÓN DE FOTOS -->
+    <div id="modalFoto" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-4" onclick="this.classList.replace('flex', 'hidden')">
+        <div class="relative max-w-3xl w-full bg-white rounded-2xl p-2 shadow-2xl">
+            <img id="imgModal" src="" class="w-full h-auto max-h-[85vh] object-contain rounded-xl">
+        </div>
+    </div>
+
+    <script>
+        let fotoTemporal = "";
+        let usuarioAutenticado = null;
+
+        if (!localStorage.getItem('credenciales')) {
+            localStorage.setItem('credenciales', JSON.stringify({ jefe: "jefe123", supervisor: "sup123", taller: "taller123" }));
+        }
+        if (!localStorage.getItem('operarios')) {
+            localStorage.setItem('operarios', JSON.stringify([
+                "Martin Sepúlveda", "Arnoldo Sepúlveda", "Rubén Ramírez", 
+                "Álvaro Giraldo", "Jean Pierre Herrera", "Javier Guatín", "Guillermo Ospina"
+            ]));
+        }
+        if (!localStorage.getItem('maquinas')) {
+            localStorage.setItem('maquinas', JSON.stringify([
+                "Faja Transportadora B", "Caldera Principal", "Banco de Empaque 1", 
+                "Compresor de Aire A", "Clasificadora de Tallos"
+            ]));
+        }
+        if (!localStorage.getItem('solicitudes')) {
+            localStorage.setItem('solicitudes', JSON.stringify([]));
+        }
+
+        function mostrarToast(mensaje, tipo = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            let bgColors = tipo === 'success' ? 'bg-slate-900 text-[#fef08a] border-l-4 border-[#d4af37]' : (tipo === 'error' ? 'bg-red-600 text-white' : 'bg-slate-800 text-white');
+            
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-lg text-xs font-bold transition-all transform translate-y-2 opacity-0 flex items-center gap-2 ${bgColors}`;
+            toast.innerHTML = `<span>${mensaje}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function login(event) {
+            event.preventDefault();
+            const rol = document.getElementById('loginRol').value;
+            const claveInput = document.getElementById('loginClave').value;
+            const creds = JSON.parse(localStorage.getItem('credenciales'));
+
+            if (claveInput === creds[rol]) {
+                usuarioAutenticado = rol;
+                document.getElementById('pantalla-login').classList.add('hidden');
+                document.getElementById('contenedor-roles').classList.remove('hidden');
+                document.getElementById('sidebar').classList.remove('hidden');
+                document.getElementById('info-usuario-header').classList.remove('hidden');
+                
+                const rolesNombres = { jefe: "Jefe Mantenimiento", supervisor: "Supervisor", taller: "Monitor Taller" };
+                document.getElementById('rolActivoTexto').innerText = `Rol: ${rolesNombres[rol]}`;
+
+                if (rol === 'jefe') {
+                    document.getElementById('menu-config-admin').classList.remove('hidden');
+                } else {
+                    document.getElementById('menu-config-admin').classList.add('hidden');
+                }
+
+                navegarA('panel');
+                mostrarToast(`Bienvenido como ${rolesNombres[rol]}`);
             } else {
-                document.getElementById('tab-ajustes').classList.add('hidden');
+                mostrarToast('Clave de acceso incorrecta', 'error');
             }
-
-            mostrarToast(`Sesión iniciada como: ${rol}`);
         }
 
-        function cerrarSesion() {
-            document.getElementById('login-pass').value = '';
+        function logout() {
+            usuarioAutenticado = null;
             document.getElementById('pantalla-login').classList.remove('hidden');
-            rolActual = 'operario';
+            document.getElementById('contenedor-roles').classList.add('hidden');
+            document.getElementById('sidebar').classList.add('hidden');
+            document.getElementById('info-usuario-header').classList.add('hidden');
+            document.getElementById('loginClave').value = '';
+            mostrarToast('Sesión cerrada correctamente');
         }
 
-        function cambiarPestana(pestana) {
-            ['ordenes', 'crear', 'ajustes'].forEach(p => {
-                document.getElementById(`sec-${p}`).classList.add('hidden');
-                document.getElementById(`tab-${p}`).classList.remove('text-blue-700', 'border-b-2', 'border-blue-700', 'bg-gray-50');
-                document.getElementById(`tab-${p}`).classList.add('text-gray-500');
+        function navegarA(vista) {
+            const subsecciones = document.querySelectorAll('.subseccion');
+            subsecciones.forEach(el => el.classList.add('hidden'));
+
+            if (vista === 'panel') {
+                if (usuarioAutenticado === 'jefe') {
+                    document.getElementById('rol-jefe').classList.remove('hidden');
+                    cargarBandejaJefe();
+                } else if (usuarioAutenticado === 'supervisor') {
+                    document.getElementById('rol-supervisor').classList.remove('hidden');
+                    cargarSelectoresSupervisor();
+                } else if (usuarioAutenticado === 'taller') {
+                    document.getElementById('rol-taller').classList.remove('hidden');
+                    cargarMonitorTaller();
+                }
+            } else if (vista === 'historial') {
+                document.getElementById('vista-historial').classList.remove('hidden');
+                cargarHistorial();
+            } else if (vista === 'config') {
+                document.getElementById('vista-config').classList.remove('hidden');
+                cargarConfiguraciones();
+            }
+        }
+
+        function comprimirYConvertirImagen(input, contexto) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 800;
+
+                    if (width > height && width > maxDim) {
+                        height *= maxDim / width;
+                        width = maxDim;
+                    } else if (height > maxDim) {
+                        width *= maxDim / height;
+                        height = maxDim;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    fotoTemporal = canvas.toDataURL('image/jpeg', 0.7);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function enviarSolicitudSupervisor(event) {
+            event.preventDefault();
+            const solicitante = document.getElementById('sup_solicitante').value;
+            const maquina = document.getElementById('sup_maquina').value;
+            const numMaquina = document.getElementById('sup_num_maquina').value;
+            const ubicacion = document.getElementById('sup_ubicacion').value;
+            const resumen = document.getElementById('sup_resumen').value;
+
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const nuevaOrden = {
+                id: Date.now(),
+                codigo: 'OT-' + Math.floor(1000 + Math.random() * 9000),
+                fecha: new Date().toLocaleString(),
+                solicitante,
+                maquina,
+                numMaquina,
+                ubicacion,
+                resumen,
+                fotoAntes: fotoTemporal,
+                estado: 'Pendiente',
+                prioridad: 'Media',
+                programa: 'Correctivo'
+            };
+
+            solicitudes.push(nuevaOrden);
+            localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+
+            mostrarToast('Orden enviada correctamente a Mantenimiento');
+            event.target.reset();
+            fotoTemporal = "";
+        }
+
+        function cargarSelectoresSupervisor() {
+            const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+            const select = document.getElementById('sup_maquina');
+            select.innerHTML = '<option value="">Seleccione máquina...</option>';
+            maquinas.forEach(m => {
+                select.innerHTML += `<option value="${m}">${m}</option>`;
+            });
+        }
+
+        function cargarBandejaJefe() {
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const contenedor = document.getElementById('lista-jefe-gestion');
+            contenedor.innerHTML = '';
+
+            let countPend = 0, countProc = 0, countRev = 0, countFin = 0;
+
+            solicitudes.forEach(s => {
+                if (s.estado === 'Pendiente') countPend++;
+                if (s.estado === 'En Taller') countProc++;
+                if (s.estado === 'Por Aprobar') countRev++;
+                if (s.estado === 'Finalizada') countFin++;
             });
 
-            document.getElementById(`sec-${pestana}`).classList.remove('hidden');
-            document.getElementById(`tab-${pestana}`).classList.add('text-blue-700', 'border-b-2', 'border-blue-700', 'bg-gray-50');
-            document.getElementById(`tab-${pestana}`).classList.remove('text-gray-500');
-        }
+            document.getElementById('kpi-pendientes').innerText = countPend;
+            document.getElementById('kpi-proceso').innerText = countProc;
+            document.getElementById('kpi-revision').innerText = countRev;
+            document.getElementById('kpi-finalizadas').innerText = countFin;
 
-        async function cargarConfiguracionUI() {
-            try {
-                const { getDocs, collection } = window.fb;
-                const snap = await getDocs(collection(window.db, "configuracion"));
-                let listas = { operarios: [], maquinas: [] };
+            const pendientesYRevision = solicitudes.filter(s => s.estado === 'Pendiente' || s.estado === 'Por Aprobar');
 
-                snap.forEach(d => {
-                    if (d.id === "listas") listas = d.data();
-                    if (d.id === "credenciales") credencialesLocales = d.data();
-                });
-
-                document.getElementById('conf_pass_jefe').value = credencialesLocales.jefe || "jefe123";
-                document.getElementById('conf_pass_sup').value = credencialesLocales.supervisor || "sup123";
-                document.getElementById('conf_pass_taller').value = credencialesLocales.taller || "taller123";
-
-                // Renderizar listas en pantalla de ajustes
-                const maquinasHTML = (listas.maquinas || []).length > 0 
-                    ? listas.maquinas.map(m => `<div class="text-xs bg-gray-100 p-2 rounded border mb-1 font-medium text-gray-700">${m}</div>`).join('')
-                    : '<span class="text-xs text-gray-400">Sin máquinas registradas</span>';
-                document.getElementById('lista-maquinas-config').innerHTML = maquinasHTML;
-
-                const operariosHTML = (listas.operarios || []).length > 0 
-                    ? listas.operarios.map(op => `<div class="text-xs bg-gray-100 p-2 rounded border mb-1 font-medium text-gray-700">${op}</div>`).join('')
-                    : '<span class="text-xs text-gray-400">Sin operarios registrados</span>';
-                document.getElementById('lista-operarios-config').innerHTML = operariosHTML;
-
-                // Cargar desplegables del formulario de creación
-                const selectMaquina = document.getElementById('form-maquina');
-                selectMaquina.innerHTML = '<option value="">Seleccione una máquina...</option>' + 
-                    (listas.maquinas || []).map(m => `<option value="${m}">${m}</option>`).join('');
-
-                const selectOperario = document.getElementById('form-operario');
-                selectOperario.innerHTML = '<option value="">Seleccione un operario...</option>' + 
-                    (listas.operarios || []).map(op => `<option value="${op}">${op}</option>`).join('');
-
-            } catch (e) {
-                console.error("Error al cargar configuración:", e);
-                mostrarToast('Error de conexión con Firestore');
-            }
-        }
-
-        async function cargarOrdenesUI() {
-            try {
-                const { getDocs, collection } = window.fb;
-                const snap = await getDocs(collection(window.db, "ordenes"));
-                ordenesCache = [];
-                snap.forEach(doc => {
-                    ordenesCache.push({ id: doc.id, ...doc.data() });
-                });
-                renderizarOrdenes(ordenesCache);
-            } catch (e) {
-                console.error("Error al cargar órdenes:", e);
-            }
-        }
-
-        function renderizarOrdenes(lista) {
-            const cont = document.getElementById('contenedor-ordenes');
-            if (lista.length === 0) {
-                cont.innerHTML = `<div class="bg-white p-6 rounded-lg shadow-sm text-center text-gray-400 col-span-full">No hay órdenes registradas.</div>`;
+            if (pendientesYRevision.length === 0) {
+                contenedor.innerHTML = '<div class="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-center text-xs font-semibold">No hay órdenes pendientes de asignación ni cierres por revisar.</div>';
                 return;
             }
 
-            cont.innerHTML = lista.map(o => `
-                <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col justify-between">
-                    <div>
-                        <div class="flex justify-between items-start mb-2">
-                            <span class="text-xs font-bold px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full">${o.maquina || 'Sin Máquina'}</span>
-                            <span class="text-xs px-2.5 py-1 rounded-full font-bold ${o.estado === 'Finalizada' ? 'bg-green-100 text-green-700' : (o.estado === 'En Proceso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700')}">
-                                ${o.estado || 'Pendiente'}
-                            </span>
-                        </div>
-                        <p class="text-sm text-gray-800 mb-4 font-medium">${o.descripcion || ''}</p>
-                    </div>
+            pendientesYRevision.forEach(s => {
+                const esCritica = s.prioridad === 'Crítica';
+                const cardClass = esCritica ? 'border-2 border-red-500 alerta-critica-animada bg-red-50/20' : 'border border-slate-200 bg-white';
+                
+                let botonAccion = '';
+                if (s.estado === 'Pendiente') {
+                    botonAccion = `<button onclick="abrirModalAsignarJefe(${s.id})" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border border-[#d4af37]/50">🔥 Asignar Técnico</button>`;
+                } else if (s.estado === 'Por Aprobar') {
+                    botonAccion = `<button onclick="abrirModalRevisionJefe(${s.id})" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer">🔎 Revisar y Cerrar</button>`;
+                }
 
-                    <div class="border-t pt-3 space-y-2">
-                        <div class="text-xs text-gray-500 flex justify-between">
-                            <span><strong>Sol:</strong> ${o.operario || 'N/A'}</span>
-                            <span><strong>Prio:</strong> ${o.prioridad || 'Media'}</span>
-                        </div>
-
-                        ${(rolActual === 'taller' || rolActual === 'supervisor' || rolActual === 'jefe') && o.estado !== 'Finalizada' ? `
-                            <div class="flex gap-2 pt-2">
-                                ${o.estado === 'Pendiente' ? `
-                                    <button onclick="cambiarEstadoOrden('${o.id}', 'En Proceso')" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold py-1.5 rounded transition">En Proceso</button>
-                                ` : ''}
-                                <button onclick="cambiarEstadoOrden('${o.id}', 'Finalizada')" class="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-1.5 rounded transition">Finalizar</button>
+                contenedor.innerHTML += `
+                    <div class="p-4 rounded-2xl shadow-sm ${cardClass} flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm text-slate-900">${s.codigo}</span>
+                                <span class="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded-md border border-slate-200">${s.estado}</span>
+                                <span class="text-[10px] bg-slate-800 text-[#d4af37] font-bold px-2 py-0.5 rounded-md">${s.maquina} #${s.numMaquina || ''}</span>
                             </div>
-                        ` : ''}
+                            <p class="text-xs text-slate-600"><strong>Ubicación:</strong> ${s.ubicacion} | <strong>Solicitante:</strong> ${s.solicitante}</p>
+                            <p class="text-xs text-slate-800 font-medium"><strong>Falla:</strong> ${s.resumen}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${s.fotoAntes ? `<button onclick="verFoto('${s.fotoAntes}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-2.5 py-1.5 rounded-xl font-bold transition">🖼️ Ver Foto</button>` : ''}
+                            ${botonAccion}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            });
         }
 
-        async function cambiarEstadoOrden(id, nuevoEstado) {
-            try {
-                const { doc, updateDoc } = window.fb;
-                await updateDoc(doc(window.db, "ordenes", id), { estado: nuevoEstado });
-                mostrarToast(`Orden marcada como: ${nuevoEstado}`);
-                await cargarOrdenesUI();
-            } catch (e) {
-                console.error(e);
-                mostrarToast('Error al actualizar el estado');
+        function abrirModalAsignarJefe(id) {
+            document.getElementById('asignarId').value = id;
+            const operarios = JSON.parse(localStorage.getItem('operarios'));
+            const select = document.getElementById('jefe_asignar_responsable');
+            select.innerHTML = '<option value="">Seleccione operario...</option>';
+            operarios.forEach(o => {
+                select.innerHTML += `<option value="${o}">${o}</option>`;
+            });
+            document.getElementById('modalAsignarJefe').classList.remove('hidden');
+        }
+
+        function cerrarModalAsignarJefe() {
+            document.getElementById('modalAsignarJefe').classList.add('hidden');
+        }
+
+        function procesarAsignacionJefe(event) {
+            event.preventDefault();
+            const id = parseInt(document.getElementById('asignarId').value);
+            const prioridad = document.getElementById('jefe_asignar_prioridad').value;
+            const programa = document.getElementById('jefe_asignar_programa').value;
+            const tecnico = document.getElementById('jefe_asignar_responsable').value;
+
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const idx = solicitudes.findIndex(s => s.id === id);
+            if (idx !== -1) {
+                solicitudes[idx].prioridad = prioridad;
+                solicitudes[idx].programa = programa;
+                solicitudes[idx].tecnico = tecnico;
+                solicitudes[idx].estado = 'En Taller';
+                localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+                mostrarToast('Orden asignada y enviada a Monitor de Taller');
+                cerrarModalAsignarJefe();
+                cargarBandejaJefe();
             }
         }
 
-        function filtrarOrdenes() {
-            const texto = document.getElementById('filtro-buscar').value.toLowerCase();
-            const estado = document.getElementById('filtro-estado').value;
+        function cargarMonitorTaller() {
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const filtro = document.getElementById('filtroOperario').value.toLowerCase();
+            const contenedor = document.getElementById('lista-taller-tv');
+            contenedor.innerHTML = '';
 
-            const filtradas = ordenesCache.filter(o => {
-                const coincideTexto = (o.maquina || '').toLowerCase().includes(texto) || (o.descripcion || '').toLowerCase().includes(texto);
-                const coincideEstado = estado === '' || o.estado === estado;
-                return coincideTexto && coincideEstado;
+            const activas = solicitudes.filter(s => s.estado === 'En Taller' && (
+                s.tecnico?.toLowerCase().includes(filtro) || 
+                s.maquina?.toLowerCase().includes(filtro) ||
+                s.codigo?.toLowerCase().includes(filtro)
+            ));
+
+            if (activas.length === 0) {
+                contenedor.innerHTML = '<div class="col-span-full p-8 bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-center font-bold">NO HAY ÓRDENES ACTIVAS EN TALLER</div>';
+                return;
+            }
+
+            activas.forEach(s => {
+                const esCritica = s.prioridad === 'Crítica';
+                const cardBorder = esCritica ? 'border-4 border-red-500 alerta-critica-animada' : 'border border-slate-200';
+
+                contenedor.innerHTML += `
+                    <div class="bg-white p-5 rounded-2xl shadow-md space-y-4 ${cardBorder} flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-start border-b border-slate-100 pb-2">
+                                <div>
+                                    <span class="text-xs font-bold text-[#d4af37] tracking-wider">${s.codigo}</span>
+                                    <h3 class="text-lg font-bold text-slate-900 leading-tight">${s.maquina} ${s.numMaquina ? '#' + s.numMaquina : ''}</h3>
+                                </div>
+                                <span class="text-xs font-bold px-2.5 py-1 rounded-lg ${esCritica ? 'bg-red-600 text-white' : 'bg-slate-100 text-slate-800'}">${s.prioridad}</span>
+                            </div>
+                            <div class="text-xs space-y-1 text-slate-600">
+                                <p><strong>📍 Ubicación:</strong> ${s.ubicacion}</p>
+                                <p><strong>👷 Responsable:</strong> <span class="text-slate-900 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">${s.tecnico || 'Sin Asignar'}</span></p>
+                                <p><strong>📝 Falla:</strong> ${s.resumen}</p>
+                            </div>
+                        </div>
+                        <div class="pt-2 flex gap-2">
+                            ${s.fotoAntes ? `<button onclick="verFoto('${s.fotoAntes}')" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition">📷 Foto Inicial</button>` : ''}
+                            <button onclick="abrirModalParcial(${s.id})" class="flex-1 bg-slate-900 hover:bg-slate-800 text-[#fef08a] font-bold py-2 rounded-xl text-xs transition border border-[#d4af37]/50">⚙️ Cierre Parcial</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function abrirModalParcial(id) {
+            document.getElementById('parcialId').value = id;
+            document.getElementById('contenedor-repuestos').innerHTML = '';
+            fotoTemporal = "";
+            document.getElementById('modalCierreParcial').classList.remove('hidden');
+        }
+
+        function cerrarModalParcial() {
+            document.getElementById('modalCierreParcial').classList.add('hidden');
+        }
+
+        function agregarFilaRepuesto() {
+            const cont = document.getElementById('contenedor-repuestos');
+            const idFila = Date.now();
+            cont.innerHTML += `
+                <div id="repuesto-${idFila}" class="flex gap-2 items-center">
+                    <input type="text" placeholder="Nombre repuesto" class="rep-nombre flex-1 p-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-[#d4af37]">
+                    <input type="number" placeholder="Cant" min="1" value="1" class="rep-cant w-16 p-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-[#d4af37]">
+                    <button type="button" onclick="document.getElementById('repuesto-${idFila}').remove()" class="text-red-500 hover:text-red-700 font-bold px-2 text-xs">✕</button>
+                </div>
+            `;
+        }
+
+        function procesarCierreParcial(event) {
+            event.preventDefault();
+            const id = parseInt(document.getElementById('parcialId').value);
+            const comentarios = document.getElementById('parcialComentarios').value;
+            const tiempo = document.getElementById('parcialTiempo').value;
+
+            const repuestosInputs = document.querySelectorAll('#contenedor-repuestos > div');
+            const repuestos = [];
+            repuestosInputs.forEach(div => {
+                const nombre = div.querySelector('.rep-nombre').value;
+                const cantidad = parseFloat(div.querySelector('.rep-cant').value) || 1;
+                if (nombre) {
+                    repuestos.push({ nombre, cantidad, costoUnitario: 0 });
+                }
             });
 
-            renderizarOrdenes(filtradas);
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const idx = solicitudes.findIndex(s => s.id === id);
+            if (idx !== -1) {
+                solicitudes[idx].comentariosTaller = comentarios;
+                solicitudes[idx].tiempoEmpleado = tiempo;
+                solicitudes[idx].repuestos = repuestos;
+                solicitudes[idx].fotoDespues = fotoTemporal;
+                solicitudes[idx].estado = 'Por Aprobar';
+                localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+                mostrarToast('Reporte enviado a revisión del Jefe');
+                cerrarModalParcial();
+                cargarMonitorTaller();
+            }
         }
 
-        async function guardarNuevaOrden(e) {
-            e.preventDefault();
-            const maquina = document.getElementById('form-maquina').value;
-            const operario = document.getElementById('form-operario').value;
-            const descripcion = document.getElementById('form-descripcion').value;
-            const prioridad = document.getElementById('form-prioridad').value;
+        function abrirModalRevisionJefe(id) {
+            document.getElementById('revisionId').value = id;
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const orden = solicitudes.find(s => s.id === id);
 
-            try {
-                const { collection, addDoc } = window.fb;
-                await addDoc(collection(window.db, "ordenes"), {
-                    maquina, operario, descripcion, prioridad,
-                    estado: 'Pendiente',
-                    fecha: new Date().toISOString()
+            if (!orden) return;
+
+            document.getElementById('rev_operario').innerText = orden.tecnico || 'N/A';
+            document.getElementById('rev_comentarios').innerText = orden.comentariosTaller || 'Sin comentarios';
+            document.getElementById('rev_tiempo').innerText = orden.tiempoEmpleado || 'N/A';
+
+            const contCostos = document.getElementById('contenedor-costos-repuestos');
+            contCostos.innerHTML = '';
+
+            if (orden.repuestos && orden.repuestos.length > 0) {
+                orden.repuestos.forEach((r, i) => {
+                    contCostos.innerHTML += `
+                        <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                            <span class="text-xs font-semibold flex-1">${r.cantidad}x ${r.nombre}</span>
+                            <input type="number" min="0" step="0.01" placeholder="Costo Unitario ($)" oninput="calcularTotalRevision()" class="costo-rep-input w-32 p-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-[#d4af37]" data-index="${i}">
+                        </div>
+                    `;
+                });
+            } else {
+                contCostos.innerHTML = '<p class="text-xs text-slate-400 italic">No se registraron repuestos para esta orden.</p>';
+            }
+
+            calcularTotalRevision();
+            document.getElementById('modalRevisionJefe').classList.remove('hidden');
+        }
+
+        function calcularTotalRevision() {
+            const id = parseInt(document.getElementById('revisionId').value);
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const orden = solicitudes.find(s => s.id === id);
+
+            let total = 0;
+            const inputs = document.querySelectorAll('.costo-rep-input');
+            inputs.forEach(input => {
+                const idx = parseInt(input.dataset.index);
+                const valor = parseFloat(input.value) || 0;
+                if (orden && orden.repuestos[idx]) {
+                    total += valor * orden.repuestos[idx].cantidad;
+                }
+            });
+
+            document.getElementById('lblCostoTotal').innerText = `$ ${total.toFixed(2)}`;
+        }
+
+        function cerrarModalRevisionJefe() {
+            document.getElementById('modalRevisionJefe').classList.add('hidden');
+        }
+
+        function procesarCierreDefinitivoJefe(event) {
+            event.preventDefault();
+            const id = parseInt(document.getElementById('revisionId').value);
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const idx = solicitudes.findIndex(s => s.id === id);
+
+            if (idx !== -1) {
+                const inputs = document.querySelectorAll('.costo-rep-input');
+                let costoTotal = 0;
+                inputs.forEach(input => {
+                    const rIdx = parseInt(input.dataset.index);
+                    const val = parseFloat(input.value) || 0;
+                    if (solicitudes[idx].repuestos[rIdx]) {
+                        solicitudes[idx].repuestos[rIdx].costoUnitario = val;
+                        costoTotal += val * solicitudes[idx].repuestos[rIdx].cantidad;
+                    }
                 });
 
-                document.getElementById('form-orden').reset();
-                mostrarToast('Orden creada correctamente');
-                await cargarOrdenesUI();
-                cambiarPestana('ordenes');
-            } catch (err) {
-                console.error(err);
-                mostrarToast('Error al registrar la orden');
+                solicitudes[idx].costoTotal = costoTotal;
+                solicitudes[idx].estado = 'Finalizada';
+                solicitudes[idx].fechaCierre = new Date().toLocaleString();
+
+                localStorage.setItem('solicitudes', JSON.stringify(solicitudes));
+                mostrarToast('Orden cerrada definitivamente y enviada a Historial');
+                cerrarModalRevisionJefe();
+                cargarBandejaJefe();
             }
         }
 
-        async function agregarMaquinaLista() {
-            const input = document.getElementById('nuevaMaquinaInput');
-            const val = input.value.trim();
-            if (!val) return;
+        function cargarHistorial() {
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const filtro = document.getElementById('filtroHistorial').value.toLowerCase();
+            const cont = document.getElementById('contenedor-tarjetas-historial');
+            const vacia = document.getElementById('tabla-historial-vacia');
+            cont.innerHTML = '';
 
-            try {
-                const { getDocs, doc, setDoc, collection } = window.fb;
-                const snap = await getDocs(collection(window.db, "configuracion"));
-                let listas = { operarios: [], maquinas: [] };
-                
-                snap.forEach(d => { if(d.id === "listas") listas = d.data(); });
-                if (!listas.maquinas) listas.maquinas = [];
-                
-                listas.maquinas.push(val);
+            const finalizadas = solicitudes.filter(s => s.estado === 'Finalizada' && (
+                s.codigo?.toLowerCase().includes(filtro) ||
+                s.maquina?.toLowerCase().includes(filtro) ||
+                s.tecnico?.toLowerCase().includes(filtro) ||
+                s.solicitante?.toLowerCase().includes(filtro)
+            ));
 
-                await setDoc(doc(window.db, "configuracion", "listas"), listas);
-                input.value = "";
-                await cargarConfiguracionUI();
-                mostrarToast('Máquina guardada con éxito');
-            } catch (e) {
-                console.error(e);
-                mostrarToast('Error al guardar la máquina');
+            if (finalizadas.length === 0) {
+                vacia.classList.remove('hidden');
+                return;
             }
+            vacia.classList.add('hidden');
+
+            finalizadas.forEach(s => {
+                let listaRep = s.repuestos && s.repuestos.length > 0 
+                    ? s.repuestos.map(r => `${r.cantidad}x ${r.nombre} ($${r.costoUnitario || 0})`).join(', ')
+                    : 'Ninguno';
+
+                cont.innerHTML += `
+                    <div class="p-4 bg-white rounded-2xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-sm text-slate-900">${s.codigo}</span>
+                                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-md">FINALIZADA</span>
+                                <span class="text-xs font-bold text-slate-700">${s.maquina} #${s.numMaquina || ''}</span>
+                            </div>
+                            <span class="text-xs font-extrabold text-slate-900 bg-slate-100 px-3 py-1 rounded-xl">Costo Total: $ ${(s.costoTotal || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-slate-600">
+                            <p><strong>Solicitante:</strong> ${s.solicitante}</p>
+                            <p><strong>Técnico:</strong> ${s.tecnico || 'N/A'}</p>
+                            <p><strong>Fecha Cierre:</strong> ${s.fechaCierre || 'N/A'}</p>
+                        </div>
+                        <p class="text-xs text-slate-700"><strong>Trabajo Realizado:</strong> ${s.comentariosTaller || 'N/A'}</p>
+                        <p class="text-xs text-slate-500"><strong>Repuestos:</strong> ${listaRep}</p>
+                        <div class="pt-1 flex gap-2">
+                            ${s.fotoAntes ? `<button onclick="verFoto('${s.fotoAntes}')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg">🖼️ Foto Antes</button>` : ''}
+                            ${s.fotoDespues ? `<button onclick="verFoto('${s.fotoDespues}')" class="text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg">🖼️ Foto Después</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
         }
 
-        async function agregarOperarioLista() {
-            const input = document.getElementById('nuevoOperarioInput');
-            const val = input.value.trim();
-            if (!val) return;
+        function exportarACSV() {
+            const solicitudes = JSON.parse(localStorage.getItem('solicitudes'));
+            const finalizadas = solicitudes.filter(s => s.estado === 'Finalizada');
 
-            try {
-                const { getDocs, doc, setDoc, collection } = window.fb;
-                const snap = await getDocs(collection(window.db, "configuracion"));
-                let listas = { operarios: [], maquinas: [] };
-                
-                snap.forEach(d => { if(d.id === "listas") listas = d.data(); });
-                if (!listas.operarios) listas.operarios = [];
-                
-                listas.operarios.push(val);
-
-                await setDoc(doc(window.db, "configuracion", "listas"), listas);
-                input.value = "";
-                await cargarConfiguracionUI();
-                mostrarToast('Operario guardado con éxito');
-            } catch (e) {
-                console.error(e);
-                mostrarToast('Error al guardar el operario');
+            if (finalizadas.length === 0) {
+                mostrarToast('No hay registros finalizados para exportar', 'error');
+                return;
             }
+
+            let csv = 'Codigo,Fecha,Solicitante,Maquina,Numero,Ubicacion,Prioridad,Programa,Tecnico,Tiempo,CostoTotal,FechaCierre\n';
+
+            finalizadas.forEach(s => {
+                csv += `"${s.codigo}","${s.fecha}","${s.solicitante}","${s.maquina}","${s.numMaquina || ''}","${s.ubicacion}","${s.prioridad}","${s.programa}","${s.tecnico || ''}","${s.tiempoEmpleado || ''}","${s.costoTotal || 0}","${s.fechaCierre || ''}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', `Historial_Mantenimiento_Trigal_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
-        async function guardarCredenciales() {
+        function cargarConfiguraciones() {
+            const creds = JSON.parse(localStorage.getItem('credenciales'));
+            document.getElementById('conf_pass_jefe').value = creds.jefe;
+            document.getElementById('conf_pass_sup').value = creds.supervisor;
+            document.getElementById('conf_pass_taller').value = creds.taller;
+
+            actualizarListaMaquinasUI();
+            actualizarListaOperariosUI();
+        }
+
+        function guardarCredenciales(event) {
+            event.preventDefault();
             const jefe = document.getElementById('conf_pass_jefe').value;
             const supervisor = document.getElementById('conf_pass_sup').value;
             const taller = document.getElementById('conf_pass_taller').value;
 
-            try {
-                const { doc, setDoc } = window.fb;
-                await setDoc(doc(window.db, "configuracion", "credenciales"), {
-                    jefe: jefe,
-                    supervisor: supervisor,
-                    taller: taller
-                });
-                credencialesLocales = { jefe, supervisor, taller };
-                mostrarToast('Contraseñas actualizadas');
-            } catch (e) {
-                console.error(e);
-                mostrarToast('Error al actualizar las contraseñas');
+            localStorage.setItem('credenciales', JSON.stringify({ jefe, supervisor, taller }));
+            mostrarToast('Credenciales actualizadas exitosamente');
+        }
+
+        function actualizarListaMaquinasUI() {
+            const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+            const cont = document.getElementById('lista-maquinas-config');
+            cont.innerHTML = '';
+            maquinas.forEach((m, idx) => {
+                cont.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                        <span>${m}</span>
+                        <button onclick="eliminarMaquina(${idx})" class="text-red-500 hover:text-red-700 font-bold">✕</button>
+                    </div>
+                `;
+            });
+        }
+
+        function agregarMaquinaLista() {
+            const input = document.getElementById('nuevaMaquinaInput');
+            const val = input.value.trim();
+            if (val) {
+                const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+                maquinas.push(val);
+                localStorage.setItem('maquinas', JSON.stringify(maquinas));
+                input.value = '';
+                actualizarListaMaquinasUI();
+                mostrarToast('Máquina agregada');
             }
+        }
+
+        function eliminarMaquina(idx) {
+            const maquinas = JSON.parse(localStorage.getItem('maquinas'));
+            maquinas.splice(idx, 1);
+            localStorage.setItem('maquinas', JSON.stringify(maquinas));
+            actualizarListaMaquinasUI();
+            mostrarToast('Máquina eliminada');
+        }
+
+        function actualizarListaOperariosUI() {
+            const operarios = JSON.parse(localStorage.getItem('operarios'));
+            const cont = document.getElementById('lista-operarios-config');
+            cont.innerHTML = '';
+            operarios.forEach((o, idx) => {
+                cont.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                        <span>${o}</span>
+                        <button onclick="eliminarOperario(${idx})" class="text-red-500 hover:text-red-700 font-bold">✕</button>
+                    </div>
+                `;
+            });
+        }
+
+        function agregarOperarioLista() {
+            const input = document.getElementById('nuevoOperarioInput');
+            const val = input.value.trim();
+            if (val) {
+                const operarios = JSON.parse(localStorage.getItem('operarios'));
+                operarios.push(val);
+                localStorage.setItem('operarios', JSON.stringify(operarios));
+                input.value = '';
+                actualizarListaOperariosUI();
+                mostrarToast('Operario agregado');
+            }
+        }
+
+        function eliminarOperario(idx) {
+            const operarios = JSON.parse(localStorage.getItem('operarios'));
+            operarios.splice(idx, 1);
+            localStorage.setItem('operarios', JSON.stringify(operarios));
+            actualizarListaOperariosUI();
+            mostrarToast('Operario eliminado');
+        }
+
+        function reiniciarTodasLasOrdenes() {
+            if (confirm('¿Está absolutamente seguro de borrar TODAS las órdenes del sistema? Esta acción no se puede deshacer.')) {
+                localStorage.setItem('solicitudes', JSON.stringify([]));
+                mostrarToast('Todas las órdenes han sido eliminadas');
+                cargarConfiguraciones();
+            }
+        }
+
+        function verFoto(url) {
+            if (!url) return;
+            document.getElementById('imgModal').src = url;
+            document.getElementById('modalFoto').classList.replace('hidden', 'flex');
         }
     </script>
 </body>
