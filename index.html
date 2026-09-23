@@ -21,7 +21,7 @@
 </head>
 <body class="bg-slate-50 font-sans min-h-screen flex flex-col relative text-slate-800">
 
-    <!-- CONTENEDOR DE TOASTS -->
+    <!-- CONTENEDOR DE TOASTS / NOTIFICACIONES -->
     <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- HEADER CORPORATIVO -->
@@ -120,7 +120,6 @@
                         </div>
                     </div>
 
-                    <!-- LISTADO DE GESTIÓN DEL JEFE -->
                     <div class="space-y-4">
                         <h3 class="text-md font-bold text-slate-900">📋 BANDEJA DE ÓRDENES (PENDIENTES Y POR REVISIÓN DE CIERRE)</h3>
                         <div id="lista-jefe-gestion" class="space-y-3"></div>
@@ -159,7 +158,7 @@
                                 <textarea id="sup_resumen" required rows="3" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]" placeholder="¿Qué falla o requerimiento observa?"></textarea>
                             </div>
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">FOTOS DE EVIDENCIA (PUEDE SELECCIONAR VARIAS)</label>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">FOTOS DE EVIDENCIA</label>
                                 <input type="file" id="sup_foto" accept="image/*" multiple required class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 cursor-pointer">
                             </div>
                             <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#d4af37] font-bold py-3 rounded-xl transition cursor-pointer text-sm shadow-sm border border-[#d4af37]/50">ENVIAR ORDEN A MANTENIMIENTO</button>
@@ -185,63 +184,12 @@
                     <div id="lista-taller-tv" class="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6"></div>
                 </div>
 
-                <!-- PANTALLA DE AJUSTES Y CREDENCIALES -->
+                <!-- PANTALLA: AJUSTES GENERALES -->
                 <div id="vista-config" class="subseccion hidden max-w-5xl mx-auto space-y-6">
                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
                         <div>
                             <h2 class="text-xl font-bold text-slate-900 mb-1">⚙️ AJUSTES GENERALES</h2>
                             <p class="text-xs text-slate-500">Administre las claves, las máquinas, el personal técnico y los datos del sistema.</p>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <!-- Claves -->
-                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                                <h3 class="text-sm font-bold text-slate-900 uppercase">🔎 Claves de Acceso</h3>
-                                <form class="space-y-3">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">CLAVE MANTENIMIENTO</label>
-                                        <input type="text" id="conf_pass_jefe" required class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">CLAVE SUPERVISOR</label>
-                                        <input type="text" id="conf_pass_sup" required class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-600 mb-1">CLAVE TALLER</label>
-                                        <input type="text" id="conf_pass_taller" required class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
-                                    </div>
-                                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">Actualizar Credenciales</button>
-                                </form>
-                            </div>
-
-                            <!-- EQUIPOS -->
-                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                                <h3 class="text-sm font-bold text-slate-900 uppercase">🏗 Nombre de Máquinas</h3>
-                                <div class="flex gap-2">
-                                    <input type="text" id="nuevaMaquinaInput" placeholder="Nombre de máquina/equipo" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
-                                    <button type="button" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">+ Añadir</button>
-                                </div>
-                                <div id="lista-maquinas-config" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
-                            </div>
-
-                            <!-- Operarios -->
-                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                                <h3 class="text-sm font-bold text-slate-900 uppercase">👷 Operarios de Taller</h3>
-                                <div class="flex gap-2">
-                                    <input type="text" id="nuevoOperarioInput" placeholder="Nombre nuevo operario" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
-                                    <button type="button" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">+ Añadir</button>
-                                </div>
-                                <div id="lista-operarios-config" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
-                            </div>
-                        </div>
-
-                        <!-- ZONA DE PELIGRO -->
-                        <div class="p-4 bg-red-50 rounded-2xl border border-red-200 flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div>
-                                <h4 class="text-xs font-bold text-red-800 uppercase">🔄 Reiniciar Órdenes del Sistema</h4>
-                                <p class="text-[11px] text-red-600">Elimina todas las órdenes pendientes, activas, en revisión e historial para empezar desde cero.</p>
-                            </div>
-                            <button type="button" class="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition cursor-pointer shadow-sm shrink-0">Borrar Todas las Órdenes</button>
                         </div>
                     </div>
                 </div>
@@ -253,10 +201,6 @@
                             <h2 class="text-xl font-bold text-slate-900">📋 Historial General de Mantenimiento</h2>
                             <p class="text-xs text-slate-500">Órdenes finalizadas, costos totales y repuestos en Flores El Trigal.</p>
                         </div>
-                        <div class="flex gap-2 w-full md:w-auto flex-wrap">
-                            <input type="text" id="filtroHistorial" placeholder="🔍 Buscar en historial..." class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37] w-full md:w-64">
-                            <button class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] font-bold px-4 py-2.5 rounded-xl text-xs transition cursor-pointer shadow-sm shrink-0 border border-[#d4af37]/50">📥 Exportar CSV</button>
-                        </div>
                     </div>
                     <div id="tabla-historial-vacia" class="hidden p-6 bg-white rounded-2xl border border-slate-200 text-slate-500 text-center text-sm">No hay registros en el historial.</div>
                     <div id="contenedor-tarjetas-historial" class="space-y-3"></div>
@@ -266,11 +210,11 @@
         </div>
     </div>
 
-    <!-- CONEXIÓN FIREBASE Y LÓGICA DE LA APLICACIÓN -->
+    <!-- CONEXIÓN FIREBASE Y LÓGICA COMPLETA DE ACCESO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
-            getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc 
+            getFirestore, collection, doc, setDoc, getDocs, onSnapshot 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -287,16 +231,74 @@
         const db = getFirestore(app);
 
         window.db = db;
-        window.fb = { collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc };
-
         window.solicitudesGlobales = [];
         window.configGlobal = {
             credenciales: { jefe: "jefe123", supervisor: "sup123", taller: "taller123" },
             operarios: ["Martin Sepúlveda", "Arnoldo Sepúlveda", "Rubén Ramírez", "Álvaro Giraldo", "Jean Pierre Herrera", "Javier Guatín", "Guillermo Ospina"],
             maquinas: ["Faja Transportadora B", "Caldera Principal", "Banco de Empaque 1", "Compresor de Aire A", "Clasificadora de Tallos"]
         };
+        window.usuarioActivo = null;
 
-        // Escuchar datos en tiempo real de Firestore
+        // 1. FUNCIÓN DE INICIO DE SESIÓN (LOGIN)
+        window.login = function(e) {
+            e.preventDefault();
+            const rolSelect = document.getElementById("loginRol").value;
+            const claveInput = document.getElementById("loginClave").value;
+
+            const claveCorrecta = window.configGlobal.credenciales[rolSelect];
+
+            if (claveInput === claveCorrecta) {
+                window.usuarioActivo = rolSelect;
+                
+                // Mostrar Header y Sidebar
+                document.getElementById("pantalla-login").classList.add("hidden");
+                document.getElementById("contenedor-roles").classList.remove("hidden");
+                document.getElementById("sidebar").classList.remove("hidden");
+                document.getElementById("info-usuario-header").classList.remove("hidden");
+
+                // Actualizar texto de Rol
+                const nombresRoles = { jefe: "🔨 Mantenimiento", supervisor: "👷 Solicitante", taller: "⚙️ Taller" };
+                document.getElementById("rolActivoTexto").innerText = "Rol: " + nombresRoles[rolSelect];
+
+                // Mostrar la pestaña de Ajustes sólo a Mantenimiento
+                if (rolSelect === 'jefe') {
+                    document.getElementById("menu-config-admin").classList.remove("hidden");
+                } else {
+                    document.getElementById("menu-config-admin").classList.add("hidden");
+                }
+
+                // Navegar a la pantalla correspondiente
+                navegarA('panel');
+            } else {
+                alert("⚠️ Clave de acceso incorrecta. Intente nuevamente.");
+            }
+        };
+
+        // 2. NAVEGACIÓN ENTRE PANTALLAS
+        window.navegarA = function(pantalla) {
+            // Ocultar todas las subsecciones
+            document.querySelectorAll(".subseccion").forEach(el => el.classList.add("hidden"));
+
+            if (pantalla === 'panel') {
+                document.getElementById("rol-" + window.usuarioActivo).classList.remove("hidden");
+            } else if (pantalla === 'historial') {
+                document.getElementById("vista-historial").classList.remove("hidden");
+            } else if (pantalla === 'config') {
+                document.getElementById("vista-config").classList.remove("hidden");
+            }
+        };
+
+        // 3. CERRAR SESIÓN (LOGOUT)
+        window.logout = function() {
+            window.usuarioActivo = null;
+            document.getElementById("loginClave").value = "";
+            document.getElementById("pantalla-login").classList.remove("hidden");
+            document.getElementById("contenedor-roles").classList.add("hidden");
+            document.getElementById("sidebar").classList.add("hidden");
+            document.getElementById("info-usuario-header").classList.add("hidden");
+        };
+
+        // Escuchar datos de Firestore
         function escucharOrdenesFirestore() {
             onSnapshot(collection(db, "ordenes"), (snapshot) => {
                 window.solicitudesGlobales = [];
@@ -307,11 +309,10 @@
             });
         }
 
-        // Renderizar el Historial
+        // Renderizar Historial con 'Fecha' en mayúscula
         function renderizarHistorial() {
             const contenedor = document.getElementById("contenedor-tarjetas-historial");
             if (!contenedor) return;
-            
             contenedor.innerHTML = "";
 
             if (window.solicitudesGlobales.length === 0) {
@@ -322,7 +323,6 @@
             }
 
             window.solicitudesGlobales.forEach((orden) => {
-                // CORRECCIÓN PRINCIPAL: Leer el campo 'Fecha' con mayúscula desde Firestore
                 const fechaInicio = orden.Fecha || orden.fecha || 'Sin fecha registrada';
                 const fechaCierre = orden.fechaCierre || orden.FechaCierre || 'N/A';
 
@@ -344,7 +344,6 @@
             });
         }
 
-        // Cargar Configuración de Firebase o usar por defecto
         async function cargarConfiguracion() {
             try {
                 const snapshot = await getDocs(collection(db, "configuracion"));
@@ -356,7 +355,6 @@
             }
         }
 
-        // Inicializar aplicación
         cargarConfiguracion();
         escucharOrdenesFirestore();
     </script>
