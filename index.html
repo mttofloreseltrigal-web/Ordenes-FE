@@ -322,7 +322,7 @@
                 <p class="text-xs text-slate-500">Ingrese el reporte de trabajo. El Jefe de Mantenimiento revisará los repuestos y asignará los costos.</p>
             </div>
             
-            <form onsubmit="procesarCierreParcial(event)" class="space-y-4">
+            <form id="formCierreParcial" onsubmit="procesarCierreParcial(event)" class="space-y-4">
                 <input type="hidden" id="parcialId">
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Comentarios / Acciones Realizadas *</label>
@@ -342,13 +342,13 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fotos del Trabajo Finalizado (Múltiples fotos permitidas) *</label>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Fotos del Trabajo Finalizado (Múltiples fotos) *</label>
                     <input type="file" id="parcialFoto" accept="image/*" multiple required onchange="comprimirYConvertirVariasImagenes(this)" class="w-full text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-slate-100 file:text-slate-700 cursor-pointer">
                 </div>
 
                 <div class="flex gap-3 justify-end pt-2">
                     <button type="button" onclick="cerrarModalParcial()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer">Cancelar</button>
-                    <button type="submit" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold rounded-xl transition cursor-pointer shadow-sm border border-[#d4af37]/50">Enviar a Revisión del Jefe</button>
+                    <button type="submit" id="btnEnviarCierreParcial" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold rounded-xl transition cursor-pointer shadow-sm border border-[#d4af37]/50">Enviar a Revisión del Jefe</button>
                 </div>
             </form>
         </div>
@@ -476,7 +476,6 @@
                 if (docSnap.id === "listas") {
                     const data = docSnap.data();
                     if (data.operarios) {
-                        // Normalizar operarios si venían en formato plano
                         window.configGlobal.operarios = data.operarios.map(op => {
                             if (typeof op === 'string') return { nombre: op, telefono: '' };
                             return op;
@@ -581,7 +580,6 @@
             const files = Array.from(input.files);
             if (!files.length) return;
 
-            let procesadas = 0;
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
@@ -605,7 +603,6 @@
                         const ctx = canvas.getContext('2d');
                         ctx.drawImage(img, 0, 0, width, height);
                         fotosTemporales.push(canvas.toDataURL('image/jpeg', 0.7));
-                        procesadas++;
                     };
                     img.src = e.target.result;
                 };
@@ -621,7 +618,7 @@
             const ubicacion = document.getElementById('sup_ubicacion').value.trim();
             const resumen = document.getElementById('sup_resumen').value.trim();
 
-            if (!solicitante || !maquina || !numMaquina || !ubicacion || !resumen || fotosTemporales.length === 0) {
+            if (!solicitante || !maquina || !numMaquina || !ubicacion || !resumen) {
                 mostrarToast('Por favor complete todos los datos del formulario.', 'error');
                 return;
             }
@@ -760,7 +757,6 @@
                 mostrarToast('Orden asignada y enviada a Monitor de Taller');
                 cerrarModalAsignarJefe();
 
-                // ENVIAR POR WHATSAPP
                 if (operarioObj && operarioObj.telefono) {
                     let telLimpio = operarioObj.telefono.replace(/\D/g, '');
                     let mensaje = `🛠️ *NUEVA ORDEN ASIGNADA - FLORES EL TRIGAL*\n\n` +
@@ -835,6 +831,7 @@
         function abrirModalParcial(id) {
             document.getElementById('parcialId').value = id;
             document.getElementById('contenedor-repuestos').innerHTML = '';
+            document.getElementById('formCierreParcial').reset();
             fotosTemporales = [];
             document.getElementById('modalCierreParcial').classList.remove('hidden');
         }
@@ -857,26 +854,31 @@
 
         async function procesarCierreParcial(event) {
             event.preventDefault();
-            const id = parseInt(document.getElementById('parcialId').value);
-            const comentarios = document.getElementById('parcialComentarios').value.trim();
-            const tiempo = document.getElementById('parcialTiempo').value.trim();
-
-            if (!comentarios || !tiempo) {
-                mostrarToast('Ingrese los comentarios y el tiempo utilizado', 'error');
-                return;
-            }
-
-            const repuestosInputs = document.querySelectorAll('#contenedor-repuestos > div');
-            const repuestos = [];
-            repuestosInputs.forEach(div => {
-                const nombre = div.querySelector('.rep-nombre').value;
-                const cantidad = parseFloat(div.querySelector('.rep-cant').value) || 1;
-                if (nombre) {
-                    repuestos.push({ nombre, cantidad, costoUnitario: 0 });
-                }
-            });
-
+            const btnSubmit = document.getElementById('btnEnviarCierreParcial');
+            
             try {
+                const id = parseInt(document.getElementById('parcialId').value);
+                const comentarios = document.getElementById('parcialComentarios').value.trim();
+                const tiempo = document.getElementById('parcialTiempo').value.trim();
+
+                if (!id || !comentarios || !tiempo) {
+                    mostrarToast('Por favor diligencie comentarios y tiempo empleado.', 'error');
+                    return;
+                }
+
+                btnSubmit.disabled = true;
+                btnSubmit.innerText = 'Enviando...';
+
+                const repuestosInputs = document.querySelectorAll('#contenedor-repuestos > div');
+                const repuestos = [];
+                repuestosInputs.forEach(div => {
+                    const nombre = div.querySelector('.rep-nombre')?.value;
+                    const cantidad = parseFloat(div.querySelector('.rep-cant')?.value) || 1;
+                    if (nombre) {
+                        repuestos.push({ nombre, cantidad, costoUnitario: 0 });
+                    }
+                });
+
                 await window.fb.updateDoc(window.fb.doc(window.db, "ordenes", String(id)), {
                     comentariosTaller: comentarios,
                     tiempoEmpleado: tiempo,
@@ -884,11 +886,15 @@
                     fotosDespues: fotosTemporales.length > 0 ? fotosTemporales : [],
                     estado: 'Por Aprobar'
                 });
-                mostrarToast('Reporte parcial con fotos enviado a revisión del Jefe');
+
+                mostrarToast('Reporte parcial enviado a revisión del Jefe con éxito');
                 cerrarModalParcial();
             } catch (e) {
-                console.error(e);
-                mostrarToast('Error al enviar reporte parcial', 'error');
+                console.error("Error al procesar cierre parcial:", e);
+                mostrarToast('Error al enviar reporte parcial. Intente de nuevo.', 'error');
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = 'Enviar a Revisión del Jefe';
             }
         }
 
