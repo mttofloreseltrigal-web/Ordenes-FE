@@ -4,40 +4,89 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mantenimiento - Órdenes de Trabajo</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        .active-tab {
-            border-bottom: 2px solid #2563eb;
-            color: #2563eb;
-            font-weight: 600;
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+
+        /* Estilos de Notificaciones Flotantes */
+        #contenedorNotificaciones {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-width: 400px;
+            width: calc(100% - 2rem);
+            pointer-events: none;
+        }
+
+        .notificacion-card {
+            pointer-events: auto;
+            background: #ffffff;
+            border-left: 4px solid #2563eb;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: all 0.2s ease;
+        }
+
+        .notificacion-card.exito { border-left-color: #16a34a; }
+        .notificacion-card.alerta { border-left-color: #d97706; }
+        .notificacion-card.error { border-left-color: #dc2626; }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .tab-btn.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-bottom: 2px solid #facc15;
         }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+    <!-- CONTENEDOR DE NOTIFICACIONES FLOTANTES -->
+    <div id="contenedorNotificaciones"></div>
 
     <!-- BARRA NAVEGACIÓN PRINCIPAL -->
-    <nav class="bg-blue-900 text-white shadow-lg">
+    <nav class="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center space-x-3 cursor-pointer" onclick="cambiarVista('operario')">
                     <i class="fa-solid fa-wrench text-yellow-400 text-2xl"></i>
                     <span class="font-bold text-xl tracking-wide">Gestión Mantenimiento</span>
                 </div>
                 <div class="flex space-x-1" id="navTabs">
-                    <button onclick="cambiarVista('operario')" id="tab-operario" class="px-4 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2">
+                    <button onclick="cambiarVista('operario')" id="tab-operario" class="tab-btn active px-3 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2 text-sm font-medium">
                         <i class="fa-solid fa-plus-circle"></i> <span>Solicitud</span>
                     </button>
-                    <button onclick="cambiarVista('jefe')" id="tab-jefe" class="px-4 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2">
+                    <button onclick="cambiarVista('jefe')" id="tab-jefe" class="tab-btn px-3 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2 text-sm font-medium">
                         <i class="fa-solid fa-user-gear"></i> <span>Jefe/Sup.</span>
                     </button>
-                    <button onclick="cambiarVista('taller')" id="tab-taller" class="px-4 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2">
+                    <button onclick="cambiarVista('taller')" id="tab-taller" class="tab-btn px-3 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2 text-sm font-medium">
                         <i class="fa-solid fa-screwdriver-wrench"></i> <span>Taller</span>
                     </button>
-                    <button onclick="cambiarVista('historial')" id="tab-historial" class="px-4 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2">
+                    <button onclick="cambiarVista('historial')" id="tab-historial" class="tab-btn px-3 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2 text-sm font-medium">
                         <i class="fa-solid fa-clock-rotate-left"></i> <span>Historial</span>
                     </button>
-                    <button onclick="cambiarVista('config')" id="tab-config" class="px-4 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2">
+                    <button onclick="cambiarVista('config')" id="tab-config" class="tab-btn px-3 py-2 rounded-md hover:bg-blue-800 transition flex items-center space-x-2 text-sm font-medium">
                         <i class="fa-solid fa-gears"></i> <span>Ajustes</span>
                     </button>
                 </div>
@@ -46,12 +95,12 @@
     </nav>
 
     <!-- CONTENEDOR PRINCIPAL -->
-    <div class="max-w-7xl mx-auto p-4 md:p-6">
+    <main class="max-w-7xl mx-auto p-4 md:p-6">
 
         <!-- 1. VISTA OPERARIO (CREAR ORDEN) -->
         <section id="vista-operario" class="block">
             <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-md p-6 border border-slate-200">
-                <h2 class="text-2xl font-bold text-slate-800 mb-6 border-b pb-2 flex items-center gap-2">
+                <h2 class="text-2xl font-bold text-slate-800 mb-6 border-b pb-3 flex items-center gap-2">
                     <i class="fa-solid fa-file-pen text-blue-600"></i> Nueva Solicitud de Trabajo
                 </h2>
                 <form id="formOrden" onsubmit="guardarOrden(event)" class="space-y-4">
@@ -81,15 +130,15 @@
             </div>
         </section>
 
-        <!-- MODAL AUTENTICACIÓN PARA ROLES -->
-        <div id="modalAuth" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <!-- MODAL AUTENTICACIÓN -->
+        <div id="modalAuth" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
-                <h3 class="text-xl font-bold mb-4 text-slate-800 border-b pb-2">Acceso Restringido</h3>
-                <p class="text-sm text-slate-600 mb-4">Ingrese la contraseña para continuar:</p>
-                <input type="password" id="inputClaveAcceso" placeholder="Contraseña" class="w-full border rounded-lg p-2.5 mb-4 outline-none focus:ring-2 focus:ring-blue-500">
+                <h3 class="text-xl font-bold mb-2 text-slate-800 border-b pb-2">Acceso Restringido</h3>
+                <p class="text-sm text-slate-600 mb-4">Ingrese la clave correspondiente para continuar:</p>
+                <input type="password" id="inputClaveAcceso" placeholder="Contraseña" class="w-full border rounded-lg p-2.5 mb-4 outline-none focus:ring-2 focus:ring-blue-500" onkeyup="if(event.key==='Enter') validarAuth()">
                 <div class="flex justify-end gap-2">
-                    <button onclick="cancelarAuth()" class="px-4 py-2 border rounded-lg hover:bg-slate-100">Cancelar</button>
-                    <button onclick="validarAuth()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Acceder</button>
+                    <button onclick="cancelarAuth()" class="px-4 py-2 border rounded-lg hover:bg-slate-100 text-slate-600 font-medium">Cancelar</button>
+                    <button onclick="validarAuth()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">Acceder</button>
                 </div>
             </div>
         </div>
@@ -109,14 +158,12 @@
         <section id="vista-taller" class="hidden">
             <h2 class="text-2xl font-bold text-slate-800 mb-6">Monitor del Taller</h2>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Por Iniciar -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border">
                     <h3 class="font-bold text-lg text-amber-600 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-hourglass-start"></i> Aprobadas por Atender
                     </h3>
                     <div id="contenedorTallerPorAtender" class="space-y-3"></div>
                 </div>
-                <!-- En Proceso -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border">
                     <h3 class="font-bold text-lg text-blue-600 mb-4 flex items-center gap-2">
                         <i class="fa-solid fa-spinner animate-spin"></i> En Ejecución
@@ -139,7 +186,7 @@
                                 <th class="p-3">Máquina</th>
                                 <th class="p-3">Problema</th>
                                 <th class="p-3">Estado</th>
-                                <th class="p-3">Acciones</th>
+                                <th class="p-3 text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="tablaHistorial" class="divide-y divide-slate-200">
@@ -159,15 +206,15 @@
                     <div>
                         <label class="block text-sm font-semibold mb-1">Agregar Operario</label>
                         <div class="flex gap-2">
-                            <input type="text" id="nuevoOperario" placeholder="Nombre completo" class="border rounded-lg p-2 flex-grow outline-none">
-                            <button onclick="agregarLista('operarios', 'nuevoOperario')" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold">Añadir</button>
+                            <input type="text" id="nuevoOperario" placeholder="Nombre completo" class="border rounded-lg p-2 flex-grow outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="agregarLista('operarios', 'nuevoOperario')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">Añadir</button>
                         </div>
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Agregar Máquina</label>
                         <div class="flex gap-2">
-                            <input type="text" id="nuevaMaquina" placeholder="Nombre de máquina/equipo" class="border rounded-lg p-2 flex-grow outline-none">
-                            <button onclick="agregarLista('maquinas', 'nuevaMaquina')" class="bg-green-600 text-white px-4 py-2 rounded-lg font-bold">Añadir</button>
+                            <input type="text" id="nuevaMaquina" placeholder="Nombre de máquina/equipo" class="border rounded-lg p-2 flex-grow outline-none focus:ring-2 focus:ring-blue-500">
+                            <button onclick="agregarLista('maquinas', 'nuevaMaquina')" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold">Añadir</button>
                         </div>
                     </div>
                 </div>
@@ -176,27 +223,27 @@
                     <h3 class="font-bold text-lg border-b pb-2">Credenciales de Acceso</h3>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Clave Jefe/Supervisor</label>
-                        <input type="text" id="claveJefe" class="border rounded-lg p-2 w-full outline-none">
+                        <input type="text" id="claveJefe" class="border rounded-lg p-2 w-full outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-sm font-semibold mb-1">Clave Taller</label>
-                        <input type="text" id="claveTaller" class="border rounded-lg p-2 w-full outline-none">
+                        <input type="text" id="claveTaller" class="border rounded-lg p-2 w-full outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <button onclick="guardarClaves()" class="bg-blue-600 text-white font-bold w-full py-2.5 rounded-lg">Guardar Contraseñas</button>
+                    <button onclick="guardarClaves()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold w-full py-2.5 rounded-lg">Guardar Contraseñas</button>
                 </div>
             </div>
         </section>
 
-    </div>
+    </main>
 
-    <!-- LÓGICA JAVASCRIPT CON FIREBASE -->
+    <!-- CONEXIÓN FIREBASE MÓDULO INTEGRADO -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { 
             getFirestore, collection, doc, setDoc, getDocs, onSnapshot, deleteDoc, updateDoc 
         } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Configuración de Firebase
+        // Configuración de tu proyecto Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAernP0Ggb3yUn7aUJwdhN6AUuqLXg0R6k",
             authDomain: "ordenes-fe.firebaseapp.com",
@@ -221,7 +268,33 @@
             maquinas: ["Faja Transportadora B", "Caldera Principal", "Banco de Empaque 1", "Compresor de Aire A", "Clasificadora de Tallos"]
         };
 
-        // Escuchar datos de la colección 'ordenes' en tiempo real
+        // Sistema de Notificaciones
+        window.mostrarNotificacion = function(titulo, mensaje, tipo = 'info') {
+            const cont = document.getElementById('contenedorNotificaciones');
+            const notif = document.createElement('div');
+            notif.className = `notificacion-card ${tipo}`;
+            
+            let icono = 'fa-circle-info text-blue-600';
+            if (tipo === 'exito') icono = 'fa-circle-check text-green-600';
+            if (tipo === 'alerta') icono = 'fa-triangle-exclamation text-amber-600';
+            if (tipo === 'error') icono = 'fa-circle-xmark text-red-600';
+
+            notif.innerHTML = `
+                <i class="fa-solid ${icono} text-xl mt-0.5"></i>
+                <div class="flex-1">
+                    <h4 class="font-bold text-sm text-slate-800">${titulo}</h4>
+                    <p class="text-xs text-slate-600 mt-0.5">${mensaje}</p>
+                </div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 text-sm">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            `;
+
+            cont.appendChild(notif);
+            setTimeout(() => { if (notif.parentNode) notif.remove(); }, 5000);
+        };
+
+        // Escuchar datos de Firestore en tiempo real (Órdenes)
         onSnapshot(collection(db, "ordenes"), (snapshot) => {
             window.solicitudesGlobales = [];
             snapshot.forEach((docSnap) => {
@@ -230,7 +303,7 @@
             refrescarVistas();
         });
 
-        // Escuchar datos de la colección 'configuracion'
+        // Escuchar datos de Configuración
         onSnapshot(doc(db, "configuracion", "general"), (docSnap) => {
             if (docSnap.exists()) {
                 window.configGlobal = docSnap.data();
@@ -240,11 +313,12 @@
             poblarSelects();
         });
 
-        // Funciones de navegación
+        // Control de vistas
         window.cambiarVista = function(vista) {
             if (['jefe', 'taller', 'config'].includes(vista)) {
                 window.rolPendiente = vista;
                 document.getElementById('modalAuth').classList.remove('hidden');
+                document.getElementById('inputClaveAcceso').focus();
             } else {
                 mostrarSeccion(vista);
             }
@@ -261,8 +335,9 @@
                 document.getElementById('modalAuth').classList.add('hidden');
                 document.getElementById('inputClaveAcceso').value = '';
                 mostrarSeccion(window.rolPendiente);
+                window.mostrarNotificacion('Acceso Concedido', 'Has ingresado correctamente', 'exito');
             } else {
-                alert('Contraseña incorrecta');
+                window.mostrarNotificacion('Acceso Denegado', 'La contraseña ingresada no es válida', 'error');
             }
         };
 
@@ -274,32 +349,36 @@
         function mostrarSeccion(idSeccion) {
             ['operario', 'jefe', 'taller', 'historial', 'config'].forEach(s => {
                 document.getElementById(`vista-${s}`).classList.add('hidden');
+                const btn = document.getElementById(`tab-${s}`);
+                if (btn) btn.classList.remove('active');
             });
             document.getElementById(`vista-${idSeccion}`).classList.remove('hidden');
+            const currentBtn = document.getElementById(`tab-${idSeccion}`);
+            if (currentBtn) currentBtn.classList.add('active');
             refrescarVistas();
         }
 
-        // Poblar selects
         function poblarSelects() {
             const selOp = document.getElementById('selectOperario');
             const selMaq = document.getElementById('selectMaquina');
 
-            selOp.innerHTML = '<option value="">Seleccione un operario...</option>';
-            selMaq.innerHTML = '<option value="">Seleccione la máquina...</option>';
+            if (selOp && selMaq) {
+                selOp.innerHTML = '<option value="">Seleccione un operario...</option>';
+                selMaq.innerHTML = '<option value="">Seleccione la máquina...</option>';
 
-            window.configGlobal.operarios.forEach(op => {
-                selOp.innerHTML += `<option value="${op}">${op}</option>`;
-            });
+                (window.configGlobal.operarios || []).forEach(op => {
+                    selOp.innerHTML += `<option value="${op}">${op}</option>`;
+                });
 
-            window.configGlobal.maquinas.forEach(maq => {
-                selMaq.innerHTML += `<option value="${maq}">${maq}</option>`;
-            });
+                (window.configGlobal.maquinas || []).forEach(maq => {
+                    selMaq.innerHTML += `<option value="${maq}">${maq}</option>`;
+                });
+            }
 
-            document.getElementById('claveJefe').value = window.configGlobal.credenciales.jefe;
-            document.getElementById('claveTaller').value = window.configGlobal.credenciales.taller;
+            if (document.getElementById('claveJefe')) document.getElementById('claveJefe').value = window.configGlobal.credenciales.jefe;
+            if (document.getElementById('claveTaller')) document.getElementById('claveTaller').value = window.configGlobal.credenciales.taller;
         }
 
-        // Crear nueva orden
         window.guardarOrden = async function(e) {
             e.preventDefault();
             const nuevaOrden = {
@@ -307,16 +386,19 @@
                 maquina: document.getElementById('selectMaquina').value,
                 descripcion: document.getElementById('descProblema').value,
                 estado: 'Pendiente',
-                fecha: new Date().toLocaleString()
+                fecha: new Date().toLocaleString('es-CO')
             };
 
-            const idDoc = String(Date.now());
-            await setDoc(doc(db, "ordenes", idDoc), nuevaOrden);
-            document.getElementById('formOrden').reset();
-            alert('¡Orden enviada con éxito!');
+            try {
+                const idDoc = String(Date.now());
+                await setDoc(doc(db, "ordenes", idDoc), nuevaOrden);
+                document.getElementById('formOrden').reset();
+                window.mostrarNotificacion('Solicitud Guardada', 'La orden fue registrada y enviada a revisión', 'exito');
+            } catch (err) {
+                window.mostrarNotificacion('Error', 'No se pudo guardar la solicitud', 'error');
+            }
         };
 
-        // Renderizar paneles
         function refrescarVistas() {
             cargarPanelJefe();
             cargarMonitorTaller();
@@ -325,15 +407,21 @@
 
         function cargarPanelJefe() {
             const cont = document.getElementById('contenedorJefe');
+            if (!cont) return;
             cont.innerHTML = '';
             const pendientes = window.solicitudesGlobales.filter(o => o.estado === 'Pendiente');
             document.getElementById('cantPendientes').innerText = `${pendientes.length} Pendientes`;
+
+            if (pendientes.length === 0) {
+                cont.innerHTML = `<p class="text-slate-500 text-sm col-span-full text-center py-8">No hay solicitudes pendientes por revisar.</p>`;
+                return;
+            }
 
             pendientes.forEach(o => {
                 cont.innerHTML += `
                     <div class="bg-white p-5 rounded-xl shadow-md border space-y-3">
                         <div class="flex justify-between items-start">
-                            <span class="text-xs bg-slate-200 px-2 py-1 rounded font-mono">${o.fecha}</span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-mono">${o.fecha}</span>
                             <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-1 rounded">Pendiente</span>
                         </div>
                         <h4 class="font-bold text-lg text-slate-800">${o.maquina}</h4>
@@ -351,37 +439,45 @@
         function cargarMonitorTaller() {
             const contPorAtender = document.getElementById('contenedorTallerPorAtender');
             const contEnProceso = document.getElementById('contenedorTallerEnProceso');
+            if (!contPorAtender || !contEnProceso) return;
 
             contPorAtender.innerHTML = '';
             contEnProceso.innerHTML = '';
 
-            window.solicitudesGlobales.forEach(o => {
-                if (o.estado === 'Aprobada') {
-                    contPorAtender.innerHTML += `
-                        <div class="p-4 border rounded-lg bg-amber-50/50 flex justify-between items-center">
-                            <div>
-                                <h5 class="font-bold text-slate-800">${o.maquina}</h5>
-                                <p class="text-xs text-slate-500">${o.operario} - ${o.fecha}</p>
-                            </div>
-                            <button onclick="cambiarEstadoOrden('${o.id}', 'En Proceso')" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold">Iniciar</button>
+            const porAtender = window.solicitudesGlobales.filter(o => o.estado === 'Aprobada');
+            const enProceso = window.solicitudesGlobales.filter(o => o.estado === 'En Proceso');
+
+            if (porAtender.length === 0) contPorAtender.innerHTML = `<p class="text-xs text-slate-400">Sin tareas pendientes.</p>`;
+            if (enProceso.length === 0) contEnProceso.innerHTML = `<p class="text-xs text-slate-400">Sin tareas en proceso.</p>`;
+
+            porAtender.forEach(o => {
+                contPorAtender.innerHTML += `
+                    <div class="p-3 border rounded-lg bg-amber-50/50 flex justify-between items-center">
+                        <div>
+                            <h5 class="font-bold text-slate-800 text-sm">${o.maquina}</h5>
+                            <p class="text-xs text-slate-500">${o.operario} - ${o.fecha}</p>
                         </div>
-                    `;
-                } else if (o.estado === 'En Proceso') {
-                    contEnProceso.innerHTML += `
-                        <div class="p-4 border rounded-lg bg-blue-50/50 flex justify-between items-center">
-                            <div>
-                                <h5 class="font-bold text-slate-800">${o.maquina}</h5>
-                                <p class="text-xs text-slate-500">${o.operario} - ${o.fecha}</p>
-                            </div>
-                            <button onclick="cambiarEstadoOrden('${o.id}', 'Finalizada')" class="bg-green-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold">Finalizar</button>
+                        <button onclick="cambiarEstadoOrden('${o.id}', 'En Proceso')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Iniciar</button>
+                    </div>
+                `;
+            });
+
+            enProceso.forEach(o => {
+                contEnProceso.innerHTML += `
+                    <div class="p-3 border rounded-lg bg-blue-50/50 flex justify-between items-center">
+                        <div>
+                            <h5 class="font-bold text-slate-800 text-sm">${o.maquina}</h5>
+                            <p class="text-xs text-slate-500">${o.operario} - ${o.fecha}</p>
                         </div>
-                    `;
-                }
+                        <button onclick="cambiarEstadoOrden('${o.id}', 'Finalizada')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Finalizar</button>
+                    </div>
+                `;
             });
         }
 
         function cargarHistorial() {
             const tabla = document.getElementById('tablaHistorial');
+            if (!tabla) return;
             tabla.innerHTML = '';
 
             window.solicitudesGlobales.forEach(o => {
@@ -395,13 +491,13 @@
 
                 tabla.innerHTML += `
                     <tr class="hover:bg-slate-50">
-                        <td class="p-3 text-xs text-slate-500">${o.fecha}</td>
+                        <td class="p-3 text-xs text-slate-500 font-mono">${o.fecha}</td>
                         <td class="p-3 font-medium">${o.operario}</td>
                         <td class="p-3">${o.maquina}</td>
                         <td class="p-3 text-xs max-w-xs truncate">${o.descripcion}</td>
                         <td class="p-3"><span class="px-2 py-1 rounded-full text-xs font-bold ${badge}">${o.estado}</span></td>
-                        <td class="p-3">
-                            <button onclick="eliminarOrden('${o.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
+                        <td class="p-3 text-center">
+                            <button onclick="eliminarOrden('${o.id}')" class="text-red-600 hover:text-red-800 text-xs font-bold p-1"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -410,20 +506,24 @@
 
         window.cambiarEstadoOrden = async function(id, nuevoEstado) {
             await updateDoc(doc(db, "ordenes", id), { estado: nuevoEstado });
+            window.mostrarNotificacion('Estado Actualizado', `La orden cambió a "${nuevoEstado}"`, 'exito');
         };
 
         window.eliminarOrden = async function(id) {
-            if (confirm('¿Deseas eliminar esta orden del registro?')) {
+            if (confirm('¿Deseas eliminar esta orden permanentemente?')) {
                 await deleteDoc(doc(db, "ordenes", id));
+                window.mostrarNotificacion('Eliminada', 'Orden borrada del sistema', 'alerta');
             }
         };
 
         window.agregarLista = async function(tipo, inputId) {
             const val = document.getElementById(inputId).value.trim();
             if (val) {
+                if (!window.configGlobal[tipo]) window.configGlobal[tipo] = [];
                 window.configGlobal[tipo].push(val);
                 await setDoc(doc(db, "configuracion", "general"), window.configGlobal);
                 document.getElementById(inputId).value = '';
+                window.mostrarNotificacion('Lista Actualizada', `Elemento agregado a ${tipo}`, 'exito');
             }
         };
 
@@ -431,7 +531,7 @@
             window.configGlobal.credenciales.jefe = document.getElementById('claveJefe').value;
             window.configGlobal.credenciales.taller = document.getElementById('claveTaller').value;
             await setDoc(doc(db, "configuracion", "general"), window.configGlobal);
-            alert('Contraseñas actualizadas con éxito.');
+            window.mostrarNotificacion('Guardado', 'Contraseñas actualizadas con éxito', 'exito');
         };
     </script>
 </body>
