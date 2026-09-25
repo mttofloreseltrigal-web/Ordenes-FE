@@ -96,7 +96,7 @@
                 <div id="rol-jefe" class="subseccion hidden space-y-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 text-white p-6 rounded-2xl shadow-sm border border-[#d4af37]/40">
                         <div>
-                            <h2 class="text-xl font-bold text-white flex items-center gap-2">PANEL DE CONTROL <span class="text-[#d4af37] text-sm font-semibold">| MANTENIMIENTO</span></h2>
+                            <h2 class="text-xl font-bold text-white flex items-center gap-2">🔨 PANEL DE CONTROL <span class="text-[#d4af37] text-sm font-semibold">| MANTENIMIENTO</span></h2>
                             <p class="text-xs text-slate-400">Asigne técnicos, prioridades, revise cierres parciales de taller e ingrese costos de repuestos.</p>
                         </div>
                         <!-- KPIs -->
@@ -175,7 +175,7 @@
                                 <span class="inline-block w-4 h-4 bg-emerald-400 rounded-full animate-ping"></span>
                                 <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight">⚙️ MONITOR DE TALLER EN VIVO</h2>
                             </div>
-                            <p class="text-sm text-slate-300 mt-1">Órdenes de trabajo activas - Sede Caribe.</p>
+                            <p class="text-sm text-slate-300 mt-1">Control visual de órdenes activas - Sede Caribe.</p>
                         </div>
                         <div class="flex gap-2 w-full sm:w-auto">
                             <input type="text" id="filtroOperario" placeholder="🔍 Filtrar por Operario o Máquina..." oninput="cargarMonitorTaller()" class="p-3 bg-slate-800 border border-slate-600 text-white rounded-xl text-sm outline-none focus:border-[#d4af37] w-full sm:w-80 placeholder-slate-400 font-medium">
@@ -231,6 +231,7 @@
                                     <input type="text" id="nuevoOperarioInput" placeholder="Nombre operario" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
                                     <input type="tel" id="nuevoTelOperarioInput" placeholder="Teléfono WPP (Ej: 573001234567)" class="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
                                     <div class="flex gap-2">
+                                        <input type="url" id="nuevaFotoOperarioInput" placeholder="URL Foto Perfil (https://...)" class="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none focus:border-[#d4af37]">
                                         <button type="button" onclick="agregarOperarioLista()" class="bg-slate-900 hover:bg-slate-800 text-[#fef08a] text-xs font-bold px-3 py-2 rounded-xl transition cursor-pointer border border-[#d4af37]/50">+ Añadir</button>
                                     </div>
                                 </div>
@@ -291,8 +292,8 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tipo de Mantenimiento *</label>
                     <select id="jefe_asignar_programa" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:border-[#d4af37]">
-                        <option value="Correctivo">Correctivo </option>
-                        <option value="Preventivo">Preventivo </option>
+                        <option value="Correctivo">Correctivo (Falla)</option>
+                        <option value="Preventivo">Preventivo Programado</option>
                         <option value="Predictivo">Predictivo</option>
                         <option value="Mejora">Mejora Locativa / Equipos</option>
                     </select>
@@ -307,7 +308,7 @@
                 <div class="flex gap-3 justify-end pt-2">
                     <button type="button" onclick="cerrarModalAsignarJefe()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer">Cancelar</button>
                     <button type="submit" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-sm flex items-center gap-2">
-                        <span>Asignar y Notificar por WPP</span>
+                        <span>📲 Asignar y Notificar por WPP</span>
                     </button>
                 </div>
             </form>
@@ -1012,7 +1013,6 @@
                 const fotosAntes = s.fotosAntes || (s.fotoAntes ? [s.fotoAntes] : []);
                 const fotosDespues = s.fotosDespues || (s.fotoDespues ? [s.fotoDespues] : []);
 
-                // Buscar foto del operario asignado en la configuración global
                 const datosOperario = window.configGlobal.operarios.find(o => o.nombre === s.tecnico);
                 const fotoOperario = datosOperario && datosOperario.foto 
                     ? datosOperario.foto 
@@ -1030,6 +1030,7 @@
                         </div>
                         
                         <div class="flex items-center gap-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                            <img src="${fotoOperario}" alt="Foto Operario" class="w-12 h-12 rounded-full object-cover border-2 border-[#d4af37] shadow-sm">
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 text-xs text-slate-600 flex-1">
                                 <p><strong>Técnico Responsable:</strong> <span class="text-slate-900 font-bold">${s.tecnico || 'N/A'}</span></p>
                                 <p><strong>Solicitante:</strong> ${s.solicitante}</p>
@@ -1175,20 +1176,29 @@
             const telefono = inputTel.value.trim();
             const foto = inputFoto.value.trim();
 
-            if (nombre) {
-                const operarios = [...window.configGlobal.operarios, { nombre, telefono, foto }];
-                try {
-                    await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "listas"), {
-                        operarios,
-                        maquinas: window.configGlobal.maquinas
-                    });
-                    inputNombre.value = '';
-                    inputTel.value = '';
-                    inputFoto.value = '';
-                    mostrarToast('Operario agregado');
-                } catch (e) {
-                    console.error(e);
-                }
+            if (!nombre) {
+                mostrarToast('Por favor ingrese al menos el nombre del operario.', 'error');
+                return;
+            }
+
+            if (!window.configGlobal.operarios) {
+                window.configGlobal.operarios = [];
+            }
+
+            const operarios = [...window.configGlobal.operarios, { nombre, telefono, foto }];
+            try {
+                await window.fb.setDoc(window.fb.doc(window.db, "configuracion", "listas"), {
+                    operarios,
+                    maquinas: window.configGlobal.maquinas || []
+                }, { merge: true });
+
+                inputNombre.value = '';
+                inputTel.value = '';
+                inputFoto.value = '';
+                mostrarToast('Operario agregado exitosamente');
+            } catch (e) {
+                console.error("Error al guardar operario:", e);
+                mostrarToast('Error al guardar el operario en la base de datos', 'error');
             }
         }
 
